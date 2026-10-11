@@ -3,7 +3,7 @@ import Toybox.WatchUi;
 
 // Distance units picker: a simple list (Kilometers / Miles), matching the
 // style of the Race Distance menu instead of an in-place toggle switch.
-class PaceMateUnitsMenu extends WatchUi.Menu2 {
+class RacePaceUnitsMenu extends WatchUi.Menu2 {
     public function initialize() {
         Menu2.initialize({:title => "Units"});
         addItem(new WatchUi.MenuItem("Kilometers", null, :unitsKm, {}));
@@ -11,7 +11,7 @@ class PaceMateUnitsMenu extends WatchUi.Menu2 {
     }
 }
 
-class PaceMateUnitsMenuDelegate extends WatchUi.Menu2InputDelegate {
+class RacePaceUnitsMenuDelegate extends WatchUi.Menu2InputDelegate {
     public function initialize() {
         Menu2InputDelegate.initialize();
     }
@@ -19,10 +19,10 @@ class PaceMateUnitsMenuDelegate extends WatchUi.Menu2InputDelegate {
     public function onSelect(menuItem as WatchUi.MenuItem) as Void {
         var id = menuItem.getId();
         if (id == :unitsKm) {
-            PaceMateCalc.setUnits(PaceMateCalc.UNITS_KM);
+            RacePaceCalc.setUnits(RacePaceCalc.UNITS_KM);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :unitsMiles) {
-            PaceMateCalc.setUnits(PaceMateCalc.UNITS_MILES);
+            RacePaceCalc.setUnits(RacePaceCalc.UNITS_MILES);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         }
     }

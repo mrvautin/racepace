@@ -1,7 +1,7 @@
 <resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
 
     <!--
-        Shared property definitions for PaceMateField and PaceMateWidget.
+        Shared property definitions for RacePaceField and RacePaceWidget.
         Both apps declare the SAME property ids/types here so their
         values interoperate: Garmin Connect Mobile, Garmin Express, and
         each app's own on-device settings all read/write the same keys.
@@ -28,7 +28,7 @@
             not exposed on-device, since the watch's own settings menu is
             for race parameters, not layout). Hiding a field lets the
             remaining fields grow to fill the space. If every field ends
-            up hidden, PaceMateFieldView forces Current Pace back on
+            up hidden, RacePaceFieldView forces Current Pace back on
             rather than showing a blank screen.
         -->
         <property id="showCurrentPace" type="boolean">true</property>
@@ -55,7 +55,7 @@
         <property id="backgroundMode" type="number">0</property>
 
         <!--
-            On-device pace alerts (PaceMateFieldView.compute()). Off by
+            On-device pace alerts (RacePaceFieldView.compute()). Off by
             default - opt-in. alertBehindThresholdSec is how long
             continuously behind target pace before the first alert
             fires; repeat alerts (every 60s) and the 5-minute alert

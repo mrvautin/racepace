@@ -16,7 +16,7 @@ import Toybox.WatchUi;
 // showSplitPace, showTargetPace, showDelta, showFinishDelta,
 // showProjectedFinish) - hidden fields free their space for whatever's
 // left, rather than leaving a blank gap. Current Pace always shows.
-class PaceMateFieldView extends WatchUi.DataField {
+class RacePaceFieldView extends WatchUi.DataField {
 
     // Largest-to-smallest so the fit search below picks the first (i.e.
     // biggest) font whose rendered width still clears the column.
@@ -62,33 +62,33 @@ class PaceMateFieldView extends WatchUi.DataField {
     }
 
     public function compute(info as Activity.Info) as Void {
-        _targetPaceSec = PaceMateCalc.targetPaceSecPerUnit();
+        _targetPaceSec = RacePaceCalc.targetPaceSecPerUnit();
 
         var elapsedDistanceM = info.elapsedDistance;
         var elapsedTimeSec = (info.timerTime != null) ? info.timerTime / 1000.0 : null;
 
         if (elapsedDistanceM != null && elapsedTimeSec != null) {
-            var checkpointMeters = PaceMateCalc.getPaceSmoothingM();
+            var checkpointMeters = RacePaceCalc.getPaceSmoothingM();
             var distanceSinceCheckpoint = elapsedDistanceM - _checkpointDistanceM;
 
             if (distanceSinceCheckpoint >= checkpointMeters) {
                 // Rolled past the next smoothing-window mark: compute
                 // pace over that window, then advance the checkpoint.
                 var timeSinceCheckpoint = elapsedTimeSec - _checkpointTimeSec;
-                _currentPaceSec = PaceMateCalc.paceSecPerUnitFromWindow(distanceSinceCheckpoint, timeSinceCheckpoint);
+                _currentPaceSec = RacePaceCalc.paceSecPerUnitFromWindow(distanceSinceCheckpoint, timeSinceCheckpoint);
                 _checkpointDistanceM = elapsedDistanceM;
                 _checkpointTimeSec = elapsedTimeSec;
             } else if (distanceSinceCheckpoint > 0) {
                 // Still within the current window: show pace over the
                 // partial window so it's never stuck for the whole gap.
                 var partialTime = elapsedTimeSec - _checkpointTimeSec;
-                _currentPaceSec = PaceMateCalc.paceSecPerUnitFromWindow(distanceSinceCheckpoint, partialTime);
+                _currentPaceSec = RacePaceCalc.paceSecPerUnitFromWindow(distanceSinceCheckpoint, partialTime);
             }
 
             // Average pace over the whole activity so far - same
             // distance/time-window math as current pace, just windowed
             // over everything instead of the last checkpoint gap.
-            _averagePaceSec = PaceMateCalc.paceSecPerUnitFromWindow(elapsedDistanceM, elapsedTimeSec);
+            _averagePaceSec = RacePaceCalc.paceSecPerUnitFromWindow(elapsedDistanceM, elapsedTimeSec);
 
             // Split Pace: live pace for the current, in-progress km/mile
             // - recomputed every second from the start of this unit to
@@ -96,7 +96,7 @@ class PaceMateFieldView extends WatchUi.DataField {
             // instead of the whole activity. Once elapsed distance
             // crosses a whole unit, that split is done: reset the
             // checkpoint to here so the next unit starts timing at 0.
-            var unitMeters = PaceMateCalc.unitDistanceMeters();
+            var unitMeters = RacePaceCalc.unitDistanceMeters();
             var distanceSinceUnitCheckpoint = elapsedDistanceM - _unitCheckpointDistanceM;
             if (distanceSinceUnitCheckpoint >= unitMeters) {
                 _unitCheckpointDistanceM = elapsedDistanceM;
@@ -104,14 +104,14 @@ class PaceMateFieldView extends WatchUi.DataField {
                 distanceSinceUnitCheckpoint = 0.0;
             }
             var timeSinceUnitCheckpoint = elapsedTimeSec - _unitCheckpointTimeSec;
-            _splitPaceSec = PaceMateCalc.paceSecPerUnitFromWindow(distanceSinceUnitCheckpoint, timeSinceUnitCheckpoint);
+            _splitPaceSec = RacePaceCalc.paceSecPerUnitFromWindow(distanceSinceUnitCheckpoint, timeSinceUnitCheckpoint);
         }
 
-        _deltaSec = PaceMateCalc.paceDeltaSec(_currentPaceSec, _targetPaceSec);
-        _projectedFinishSec = PaceMateCalc.projectedFinishSec(elapsedDistanceM, elapsedTimeSec, _currentPaceSec);
-        _finishDeltaSec = PaceMateCalc.finishDeltaSec(_projectedFinishSec);
+        _deltaSec = RacePaceCalc.paceDeltaSec(_currentPaceSec, _targetPaceSec);
+        _projectedFinishSec = RacePaceCalc.projectedFinishSec(elapsedDistanceM, elapsedTimeSec, _currentPaceSec);
+        _finishDeltaSec = RacePaceCalc.finishDeltaSec(_projectedFinishSec);
 
-        if (PaceMateCalc.getAlertsEnabled()) {
+        if (RacePaceCalc.getAlertsEnabled()) {
             checkPaceAlert(elapsedTimeSec);
         }
     }
@@ -150,7 +150,7 @@ class PaceMateFieldView extends WatchUi.DataField {
                 return;
             }
 
-            var thresholdSec = PaceMateCalc.getAlertThresholdSec();
+            var thresholdSec = RacePaceCalc.getAlertThresholdSec();
             if (!_alertFiredOnce) {
                 if (behindDuration >= thresholdSec) {
                     fireAlert(false);
@@ -183,7 +183,7 @@ class PaceMateFieldView extends WatchUi.DataField {
         }
         var message = backOnPace ? "Back on pace" : "Behind pace";
         var color = backOnPace ? Graphics.COLOR_GREEN : Graphics.COLOR_RED;
-        WatchUi.DataField.showAlert(new PaceMateAlertView(message, color));
+        WatchUi.DataField.showAlert(new RacePaceAlertView(message, color));
 
         if (Toybox has :Attention) {
             if (Attention has :vibrate) {
@@ -201,7 +201,7 @@ class PaceMateFieldView extends WatchUi.DataField {
         // (getBackgroundColor()) - that avoided a real bug where the
         // watch's actual background didn't match what this field could
         // reliably detect, leaving text unreadable on some devices.
-        var onWhite = (PaceMateCalc.getBackgroundMode() == PaceMateCalc.BACKGROUND_WHITE);
+        var onWhite = (RacePaceCalc.getBackgroundMode() == RacePaceCalc.BACKGROUND_WHITE);
         var bgColor = onWhite ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
         var fgColor = onWhite ? Graphics.COLOR_BLACK : Graphics.COLOR_WHITE;
         // Plain LT_GRAY all but disappears on a white field background;
@@ -218,13 +218,13 @@ class PaceMateFieldView extends WatchUi.DataField {
         var w = dc.getWidth();
         var h = dc.getHeight();
 
-        var showCurrent = PaceMateCalc.getShowCurrentPace();
-        var showAverage = PaceMateCalc.getShowAveragePace();
-        var showSplit = PaceMateCalc.getShowSplitPace();
-        var showTarget = PaceMateCalc.getShowTargetPace();
-        var showDelta = PaceMateCalc.getShowDelta();
-        var showFinishDelta = PaceMateCalc.getShowFinishDelta();
-        var showFinish = PaceMateCalc.getShowProjectedFinish();
+        var showCurrent = RacePaceCalc.getShowCurrentPace();
+        var showAverage = RacePaceCalc.getShowAveragePace();
+        var showSplit = RacePaceCalc.getShowSplitPace();
+        var showTarget = RacePaceCalc.getShowTargetPace();
+        var showDelta = RacePaceCalc.getShowDelta();
+        var showFinishDelta = RacePaceCalc.getShowFinishDelta();
+        var showFinish = RacePaceCalc.getShowProjectedFinish();
 
         // Never let every field end up hidden at once - a blank field
         // would be worse than a redundant Current Pace, so it's forced
@@ -262,25 +262,25 @@ class PaceMateFieldView extends WatchUi.DataField {
 
         if (showCurrent) {
             topLabels.add("CUR");
-            topValues.add(PaceMateCalc.formatPace(_currentPaceSec));
+            topValues.add(RacePaceCalc.formatPace(_currentPaceSec));
             topColors.add(fgColor);
         }
 
         if (showAverage) {
             topLabels.add("AVG");
-            topValues.add(PaceMateCalc.formatPace(_averagePaceSec));
+            topValues.add(RacePaceCalc.formatPace(_averagePaceSec));
             topColors.add(fgColor);
         }
 
         if (showSplit) {
-            topLabels.add(PaceMateCalc.unitLabel().toUpper());
-            topValues.add(PaceMateCalc.formatPace(_splitPaceSec));
+            topLabels.add(RacePaceCalc.unitLabel().toUpper());
+            topValues.add(RacePaceCalc.formatPace(_splitPaceSec));
             topColors.add(fgColor);
         }
 
         if (showTarget) {
             topLabels.add("TGT");
-            topValues.add(PaceMateCalc.formatPace(_targetPaceSec));
+            topValues.add(RacePaceCalc.formatPace(_targetPaceSec));
             topColors.add(fgColor);
         }
 
@@ -290,7 +290,7 @@ class PaceMateFieldView extends WatchUi.DataField {
                 deltaColor = (_deltaSec > 0) ? behindColor : aheadColor;
             }
             topLabels.add("+/-");
-            topValues.add(PaceMateCalc.formatPaceDelta(_deltaSec));
+            topValues.add(RacePaceCalc.formatPaceDelta(_deltaSec));
             topColors.add(deltaColor);
         }
 
@@ -300,7 +300,7 @@ class PaceMateFieldView extends WatchUi.DataField {
                 finishDeltaColor = (_finishDeltaSec > 0) ? behindColor : aheadColor;
             }
             topLabels.add("FIN+/-");
-            topValues.add(PaceMateCalc.formatFinishDelta(_finishDeltaSec));
+            topValues.add(RacePaceCalc.formatFinishDelta(_finishDeltaSec));
             topColors.add(finishDeltaColor);
         }
 
@@ -394,7 +394,7 @@ class PaceMateFieldView extends WatchUi.DataField {
         var bottomBandHeight = h - topBandBottom;
         var finishLabelH = topBandBottom + bottomBandHeight * 0.24;
         var finishValueH = topBandBottom + bottomBandHeight * 0.64;
-        var finishValue = PaceMateCalc.formatDuration(_projectedFinishSec);
+        var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
         var finishFont = fitFont(dc, [finishValue], w * 0.85, bottomBandHeight * 0.56, VALUE_FONTS);
 
         dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);

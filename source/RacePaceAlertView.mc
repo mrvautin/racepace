@@ -6,9 +6,9 @@ import Toybox.WatchUi;
 // behind pace (red, triggered after being continuously behind target
 // pace for the configured threshold, repeating every 60s up to a
 // 5-minute cutoff) and back on pace (green, fires once on recovery).
-// See PaceMateFieldView.compute() for the trigger state machine -
+// See RacePaceFieldView.compute() for the trigger state machine -
 // this class only draws the resulting message.
-class PaceMateAlertView extends WatchUi.DataFieldAlert {
+class RacePaceAlertView extends WatchUi.DataFieldAlert {
     private var _message as String;
     private var _color as Number;
 

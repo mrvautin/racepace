@@ -2,7 +2,7 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-class PaceMateFieldApp extends Application.AppBase {
+class RacePaceFieldApp extends Application.AppBase {
 
     public function initialize() {
         AppBase.initialize();
@@ -15,14 +15,14 @@ class PaceMateFieldApp extends Application.AppBase {
     }
 
     public function getInitialView() as [Views] or [Views, InputDelegates] {
-        return [new PaceMateFieldView()];
+        return [new RacePaceFieldView()];
     }
 
     // Reachable on-device from the activity's menu (hold MENU during/at the
-    // start of an activity -> Settings -> PaceMate), per Data Field on-device
+    // start of an activity -> Settings -> RacePace), per Data Field on-device
     // settings support (Connect IQ API 3.2.0+).
     public function getSettingsView() as [Views] or [Views, InputDelegates] or Null {
-        return [new PaceMateSettingsView(), new PaceMateSettingsDelegate()];
+        return [new RacePaceSettingsView(), new RacePaceSettingsDelegate()];
     }
 
     // Called when settings change via Garmin Connect Mobile/Express (and
@@ -32,7 +32,7 @@ class PaceMateFieldApp extends Application.AppBase {
     // into the canonical properties (raceDistanceM, finishTimeSec) the
     // rest of the app actually uses.
     public function onSettingsChanged() as Void {
-        PaceMateCalc.applyDisplayProperties();
+        RacePaceCalc.applyDisplayProperties();
         WatchUi.requestUpdate();
     }
 }

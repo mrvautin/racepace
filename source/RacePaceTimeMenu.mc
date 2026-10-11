@@ -2,14 +2,14 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Finish Time entry as three rows (Hours / Minutes / Seconds), each
-// opening a value list - the same Menu2 pattern as PaceMateMainMenu and
-// PaceMateDistanceMenu. Menu2 themes itself correctly on every device via
+// opening a value list - the same Menu2 pattern as RacePaceMainMenu and
+// RacePaceDistanceMenu. Menu2 themes itself correctly on every device via
 // the system's own MenuTheme, unlike WatchUi.Picker (see
-// PaceMateValueMenu for why the Picker-based version was dropped).
-class PaceMateTimeMenu extends WatchUi.Menu2 {
+// RacePaceValueMenu for why the Picker-based version was dropped).
+class RacePaceTimeMenu extends WatchUi.Menu2 {
     public function initialize() {
         Menu2.initialize({:title => "Finish Time"});
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         addItem(new WatchUi.MenuItem("Hours", (totalSec / 3600).format("%d"), :hours, {}));
         addItem(new WatchUi.MenuItem("Minutes", ((totalSec % 3600) / 60).format("%02d"), :minutes, {}));
         addItem(new WatchUi.MenuItem("Seconds", (totalSec % 60).format("%02d"), :seconds, {}));
@@ -18,7 +18,7 @@ class PaceMateTimeMenu extends WatchUi.Menu2 {
     // Refresh sub-labels whenever this menu becomes visible again (e.g.
     // returning from a value list) so they don't show stale values.
     public function onShow() as Void {
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         var hoursItem = getItem(0);
         if (hoursItem != null) {
             hoursItem.setSubLabel((totalSec / 3600).format("%d"));
@@ -34,30 +34,30 @@ class PaceMateTimeMenu extends WatchUi.Menu2 {
     }
 }
 
-class PaceMateTimeMenuDelegate extends WatchUi.Menu2InputDelegate {
+class RacePaceTimeMenuDelegate extends WatchUi.Menu2InputDelegate {
     public function initialize() {
         Menu2InputDelegate.initialize();
     }
 
     public function onSelect(menuItem as WatchUi.MenuItem) as Void {
         var id = menuItem.getId();
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         if (id == :hours) {
             WatchUi.pushView(
-                new PaceMateValueMenu("Hours", 0, 23, totalSec / 3600, "%d"),
-                new PaceMateValueMenuDelegate(method(:onHoursPicked)),
+                new RacePaceValueMenu("Hours", 0, 23, totalSec / 3600, "%d"),
+                new RacePaceValueMenuDelegate(method(:onHoursPicked)),
                 WatchUi.SLIDE_IMMEDIATE
             );
         } else if (id == :minutes) {
             WatchUi.pushView(
-                new PaceMateValueMenu("Minutes", 0, 59, (totalSec % 3600) / 60, "%02d"),
-                new PaceMateValueMenuDelegate(method(:onMinutesPicked)),
+                new RacePaceValueMenu("Minutes", 0, 59, (totalSec % 3600) / 60, "%02d"),
+                new RacePaceValueMenuDelegate(method(:onMinutesPicked)),
                 WatchUi.SLIDE_IMMEDIATE
             );
         } else if (id == :seconds) {
             WatchUi.pushView(
-                new PaceMateValueMenu("Seconds", 0, 59, totalSec % 60, "%02d"),
-                new PaceMateValueMenuDelegate(method(:onSecondsPicked)),
+                new RacePaceValueMenu("Seconds", 0, 59, totalSec % 60, "%02d"),
+                new RacePaceValueMenuDelegate(method(:onSecondsPicked)),
                 WatchUi.SLIDE_IMMEDIATE
             );
         }
@@ -69,17 +69,17 @@ class PaceMateTimeMenuDelegate extends WatchUi.Menu2InputDelegate {
     // silently broken method reference is what was crashing the app the
     // moment a value got picked.
     public function onHoursPicked(value as Number) as Void {
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         setFinishTimeParts(value, (totalSec % 3600) / 60, totalSec % 60);
     }
 
     public function onMinutesPicked(value as Number) as Void {
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         setFinishTimeParts(totalSec / 3600, value, totalSec % 60);
     }
 
     public function onSecondsPicked(value as Number) as Void {
-        var totalSec = PaceMateCalc.getFinishTimeSec();
+        var totalSec = RacePaceCalc.getFinishTimeSec();
         setFinishTimeParts(totalSec / 3600, (totalSec % 3600) / 60, value);
     }
 
@@ -88,6 +88,6 @@ class PaceMateTimeMenuDelegate extends WatchUi.Menu2InputDelegate {
         if (totalSec <= 0) {
             totalSec = 1;
         }
-        PaceMateCalc.setFinishTimeSec(totalSec);
+        RacePaceCalc.setFinishTimeSec(totalSec);
     }
 }

@@ -2,10 +2,10 @@ import Toybox.Lang;
 import Toybox.Application.Storage;
 import Toybox.Application.Properties;
 
-// Property keys and race-math helpers for the PaceMate data field.
+// Property keys and race-math helpers for the RacePace data field.
 // Canonical units are always meters and seconds; unit conversion only
 // happens at display time.
-module PaceMateCalc {
+module RacePaceCalc {
 
     const PROP_DISTANCE_M = "raceDistanceM";
     const PROP_FINISH_SEC = "finishTimeSec";
@@ -104,7 +104,7 @@ module PaceMateCalc {
     }
 
     // On-device pace alerts: off by default (opt-in). Phone-configured
-    // only - see PaceMateFieldView for the alert state machine itself.
+    // only - see RacePaceFieldView for the alert state machine itself.
     function getAlertsEnabled() as Boolean {
         var v = Properties.getValue(PROP_ALERTS_ENABLED);
         return (v == null) ? false : v;
@@ -240,7 +240,7 @@ module PaceMateCalc {
     // since direction is shown separately (an arrow, colored red/green)
     // rather than a +/- character. A leading sign glyph isn't a proper
     // first-class character in the FONT_NUMBER_* fonts (see
-    // PaceMateFieldView.VALUE_FONTS), which was throwing off
+    // RacePaceFieldView.VALUE_FONTS), which was throwing off
     // getTextDimensions()/TEXT_JUSTIFY_CENTER and forcing this column
     // onto a separate, smaller font ladder just to stay centered.
     // Dropping the sign lets it use the same big number fonts as

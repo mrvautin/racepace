@@ -1,5 +1,5 @@
 <resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
-    <string id="AppName">PaceMate</string>
+    <string id="AppName">RacePace</string>
     <string id="distanceTitle">Distance (km or mi)</string>
     <string id="finishTimeTitle">Finish Time (minutes)</string>
     <string id="unitsTitle">Distance Units (km or mi)</string>

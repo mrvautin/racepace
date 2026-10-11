@@ -4,15 +4,15 @@ import Toybox.WatchUi;
 
 // Generic "pick a number from a range" menu: one row per integer from
 // min to max, scrolled to the current value on open. Used for Hours/
-// Minutes/Seconds in PaceMateTimeMenu and Units/Tenths in
-// PaceMateCustomDistanceMenu.
+// Minutes/Seconds in RacePaceTimeMenu and Units/Tenths in
+// RacePaceCustomDistanceMenu.
 //
 // A CustomMenu rather than plain Menu2 + MenuItem: MenuItem labels only
 // support LEFT/RIGHT alignment (no CENTER), and on a round screen a
 // short left-aligned number sits hard against the bezel with a big dead
 // gap on the other side. CustomMenuItem.draw() lets us truly center the
 // text in the row instead.
-class PaceMateValueMenu extends WatchUi.CustomMenu {
+class RacePaceValueMenu extends WatchUi.CustomMenu {
     public function initialize(title as String, min as Number, max as Number, current as Number, format as String) {
         // CustomMenu's :title wants a Drawable, unlike Menu2's (which
         // also accepts a plain String).
@@ -26,7 +26,7 @@ class PaceMateValueMenu extends WatchUi.CustomMenu {
         });
         CustomMenu.initialize(60, Graphics.COLOR_BLACK, {:title => titleDrawable});
         for (var v = min; v <= max; v += 1) {
-            addItem(new PaceMateValueMenuItem(v, v.format(format)));
+            addItem(new RacePaceValueMenuItem(v, v.format(format)));
         }
         // :focus can only target an item that already exists, so this has
         // to happen after addItem, not as an initialize option (which
@@ -39,7 +39,7 @@ class PaceMateValueMenu extends WatchUi.CustomMenu {
     }
 }
 
-class PaceMateValueMenuItem extends WatchUi.CustomMenuItem {
+class RacePaceValueMenuItem extends WatchUi.CustomMenuItem {
     private var _label as String;
 
     public function initialize(value as Number, label as String) {
@@ -54,7 +54,7 @@ class PaceMateValueMenuItem extends WatchUi.CustomMenuItem {
     }
 }
 
-class PaceMateValueMenuDelegate extends WatchUi.Menu2InputDelegate {
+class RacePaceValueMenuDelegate extends WatchUi.Menu2InputDelegate {
     private var _onPicked as Method(value as Number) as Void;
 
     public function initialize(onPicked as Method(value as Number) as Void) {

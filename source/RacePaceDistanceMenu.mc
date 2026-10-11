@@ -2,7 +2,7 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Common race distances plus a custom option that opens a value menu.
-class PaceMateDistanceMenu extends WatchUi.Menu2 {
+class RacePaceDistanceMenu extends WatchUi.Menu2 {
     public function initialize() {
         Menu2.initialize({:title => "Race Distance"});
         addItem(new WatchUi.MenuItem("5K", null, :d5k, {}));
@@ -13,7 +13,7 @@ class PaceMateDistanceMenu extends WatchUi.Menu2 {
     }
 }
 
-class PaceMateDistanceMenuDelegate extends WatchUi.Menu2InputDelegate {
+class RacePaceDistanceMenuDelegate extends WatchUi.Menu2InputDelegate {
     public function initialize() {
         Menu2InputDelegate.initialize();
     }
@@ -21,19 +21,19 @@ class PaceMateDistanceMenuDelegate extends WatchUi.Menu2InputDelegate {
     public function onSelect(menuItem as WatchUi.MenuItem) as Void {
         var id = menuItem.getId();
         if (id == :d5k) {
-            PaceMateCalc.setRaceDistanceM(5000.0);
+            RacePaceCalc.setRaceDistanceM(5000.0);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :d10k) {
-            PaceMateCalc.setRaceDistanceM(10000.0);
+            RacePaceCalc.setRaceDistanceM(10000.0);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :dHalf) {
-            PaceMateCalc.setRaceDistanceM(21097.5);
+            RacePaceCalc.setRaceDistanceM(21097.5);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :dFull) {
-            PaceMateCalc.setRaceDistanceM(42195.0);
+            RacePaceCalc.setRaceDistanceM(42195.0);
             WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :dCustom) {
-            WatchUi.pushView(new PaceMateCustomDistanceMenu(), new PaceMateCustomDistanceMenuDelegate(), WatchUi.SLIDE_IMMEDIATE);
+            WatchUi.pushView(new RacePaceCustomDistanceMenu(), new RacePaceCustomDistanceMenuDelegate(), WatchUi.SLIDE_IMMEDIATE);
         }
     }
 }
