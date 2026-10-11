@@ -1,3 +1,5 @@
+<img src="resources/images/hero.png" alt="PaceMate — a Garmin watch showing current pace, target pace, ahead/behind delta, and projected finish time">
+
 # PaceMate
 
 **Race Pace Data Screen for Garmin Connect IQ**
@@ -15,6 +17,8 @@ PaceMate shows exactly what you need, when you need it:
 - **Projected Finish** — your estimated finish time based on current effort
 
 No clutter, no digging through menus mid-race — just the numbers that matter, laid out clearly so you can check your progress with a glance at your wrist. Every field except Current Pace can be turned on or off, and whatever's left grows to fill the space.
+
+Optionally, PaceMate can also nudge you on-device when you drift off pace — see **Pace Alerts** below.
 
 <img src="resources/images/ahead-target.png" width="220" alt="PaceMate data field showing current pace, target pace, ahead/behind delta, and projected finish time">
 
@@ -76,6 +80,15 @@ Turn a field off and the remaining fields grow to fill the space, so the layout 
 | 50 m | More responsive to pace changes, but shows more raw GPS jitter. |
 | 100 m | Default — a balance of responsiveness and smoothness. |
 | 200 m | Smoother reading, but slower to catch real pace changes. |
+
+**Pace Alerts:** off by default. When turned on, PaceMate nudges you on-device if you fall behind target pace for too long, and again when you get back on pace — so you don't have to keep glancing down. Also phone-configured:
+
+| Setting | Options | Description |
+| ------- | ------- | ----------- |
+| Pace Alerts | on / **off** | Master switch for alerts. Everything below only applies once this is on. |
+| Alert After Behind Pace For | 15s / 30s / 60s | How long you need to be continuously behind target pace before the first alert fires. |
+
+Once the first alert fires, PaceMate repeats it every 60 seconds for as long as you're still behind pace, then stops alerting altogether after 5 minutes — so it nudges you a few times rather than nagging indefinitely if you've deliberately backed off (a hill, a walk break). The moment you're back on pace, you get a single "back on pace" alert and the whole cycle resets, ready to trigger again if you fall behind later. Each alert type has its own vibration pattern (where your watch has a vibration motor) so you can tell them apart without looking.
 
 ### 4. Run
 
