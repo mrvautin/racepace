@@ -2,9 +2,25 @@
 
 # RacePace
 
-**Race Pace Data Screen for Garmin Connect IQ**
+**Free goal pace & projected finish time data field for Garmin watches (Connect IQ)**
 
-Stay locked onto your goal pace with a clean, at-a-glance race screen built for race day.
+[**Get RacePace free on the Garmin Connect IQ Store →**](https://apps.garmin.com/apps/44405c69-eb9b-4489-8685-c635ea78947d)
+
+RacePace is a **free** Garmin Connect IQ data field for runners chasing a goal time in a 5K, 10K, half marathon, marathon, or any custom distance. Enter your race distance and target finish time, and it shows you — live, on one screen — whether you're ahead of or behind goal pace, and what finish time you're on track for.
+
+## What problem does it solve?
+
+On race day, most runners want answers to two questions: *"Am I on pace for my goal time?"* and *"What time am I going to finish in?"* Garmin's stock screens show your pace, but leave you doing mental maths against your goal mid-race. RacePace does that maths for you.
+
+Use it if you:
+
+- are running a marathon or half marathon with a goal time (sub-4, sub-3:30, sub-2 half, a Boston qualifier / BQ pace, etc.)
+- want to know your **target pace per km or per mile** without memorising a pace band
+- want a live **projected finish time** and how many seconds ahead or behind your goal you are
+- want a gentle **vibration alert when you drop off goal pace**
+- want all of this in a **single full-screen data field** rather than spread over several screens
+
+## Features
 
 RacePace shows exactly what you need, when you need it:
 
@@ -26,7 +42,7 @@ Optionally, RacePace can also nudge you on-device when you drift off pace — se
 
 ### 1. Install
 
-Install RacePace from the [Connect IQ Store](https://apps.garmin.com) via the Connect IQ Store app, Garmin Connect Mobile, or Garmin Express.
+RacePace is free. Install it from the [Connect IQ Store](https://apps.garmin.com/apps/44405c69-eb9b-4489-8685-c635ea78947d) on the web, or search for **RacePace** in the Connect IQ Store app, Garmin Connect Mobile, or Garmin Express.
 
 ### 2. Add it to a run activity
 
@@ -51,7 +67,7 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 
 | Setting       | Description                                                    |
 | ------------- | ---------------------------------------------------------------- |
-| Race Distance | e.g. 5K, 10K, half marathon, or any custom distance               |
+| Race Distance | 5K, 10K, Half Marathon, Marathon, or any custom distance          |
 | Finish Time   | your goal time — opens Hours / Minutes / Seconds rows, each picked from a scrollable list |
 | Units         | kilometers or miles                                             |
 
@@ -98,21 +114,57 @@ See the field table above for what each value on screen means.
 
 Whether you're chasing a PB, pacing a training run, or just want a clearer view of how the race is unfolding, RacePace keeps you focused on what matters: hitting your target.
 
+## How is RacePace different from Garmin's built-in features?
+
+Garmin watches already include some pacing tools. RacePace is built to complement them:
+
+| | RacePace | Virtual Partner | PacePro | Race Predictor |
+| --- | --- | --- | --- | --- |
+| Set up with just distance + goal time | ✅ | pace only | needs a plan built for a course/distance | no goal input |
+| Live ahead/behind your goal pace | ✅ | ✅ | ✅ (per split) | ❌ |
+| Live projected finish time vs. your goal | ✅ | ❌ | ❌ | estimate from fitness, not your live run |
+| Current, average, split and target pace on one screen | ✅ | ❌ | ❌ | ❌ |
+| Set up entirely on the watch, no phone needed | ✅ | ✅ | varies by watch | n/a |
+
+If you just want one screen that answers *"am I on track for my goal time?"* with no course planning, RacePace is the simplest option. You can still use it alongside PacePro or Virtual Partner on other data screens.
+
+## FAQ
+
+**Does it work for marathons and half marathons?**
+Yes. Marathon, Half Marathon, 5K and 10K are built-in presets, and you can enter any custom distance (e.g. 15K, 30K, 50K ultra).
+
+**Can I use miles instead of kilometres?**
+Yes. Choose kilometers or miles in settings; all paces show as min/km or min/mile.
+
+**Do I need my phone to set it up?**
+No. Race distance, goal finish time and units can all be set on the watch. Display options (which fields show, pace smoothing, background colour, pace alerts) are set from Garmin Connect Mobile or Garmin Express.
+
+**Will it vibrate if I fall behind goal pace?**
+Yes, if you turn on Pace Alerts (off by default). See [Pace Alerts](#3-configure-it) above.
+
+**Does it work on treadmill or trail runs?**
+It works on any running activity. Pace comes from the watch's speed and distance, so accuracy depends on GPS (outdoors) or your footpod/wrist calibration (indoors).
+
+**Is it a watch face or an app?**
+Neither. It's a Connect IQ **data field**: you add it to a data screen inside a run activity profile.
+
+**Does it work on my watch?**
+See the list below. If your watch isn't listed, [open an issue on GitHub](https://github.com/mrvautin/racepace/issues) to request support.
+
 ## Compatible devices
 
-- Forerunner 265 / 265S
-- Forerunner 955
-- Forerunner 965
-- fenix 7 / 7S / 7X
-- fenix 7 Pro / 7S Pro / 7X Pro
-- fenix 8 (43mm / 47mm)
-- epix 2
-- epix 2 Pro (42mm / 47mm)
-- Venu 2 / 2S
-- Venu 3 / 3S
-- vivoactive 4 / 4S
-- vivoactive 5
+- **Forerunner:** 265 / 265S, 955 / 955 Solar, 965
+- **fēnix (Fenix):** 7 / 7S / 7X, 7 Pro / 7S Pro / 7X Pro, 8 (43mm / 47mm / 51mm)
+- **epix:** epix (Gen 2), epix Pro (Gen 2) 42mm / 47mm
+- **Enduro:** Enduro 2
+- **Venu:** 2 / 2S, 3 / 3S
+- **vívoactive (Vivoactive):** 4 / 4S, 5
+- **Also:** quatix 7 / 7 Pro / 7X Solar / 8, tactix 7 / 8
 
 ## Development
 
 Connect IQ data field written in Monkey C. See [manifest.xml](manifest.xml) for the app manifest and [monkey.jungle](monkey.jungle) for the build configuration.
+
+## License
+
+RacePace is free and open source under the [MIT License](LICENSE).
