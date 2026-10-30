@@ -40,6 +40,13 @@
         <property id="showFinishDelta" type="boolean">false</property>
 
         <!--
+            Heart rate, shown in the bottom row beside Projected Finish
+            on a background in the current HR zone's colour. Off by
+            default - opt-in.
+        -->
+        <property id="showHeartRate" type="boolean">false</property>
+
+        <!--
             Current-pace smoothing window, in meters. Phone-configured
             only - it's a display-smoothing preference, not a race
             parameter, so it doesn't belong on the watch's own race-setup

@@ -19,6 +19,7 @@ module RacePaceCalc {
     const PROP_SHOW_AVERAGE = "showAveragePace";
     const PROP_SHOW_SPLIT = "showSplitPace";
     const PROP_SHOW_FINISH_DELTA = "showFinishDelta";
+    const PROP_SHOW_HEART_RATE = "showHeartRate";
     const PROP_PACE_SMOOTHING_M = "paceSmoothingM";
     const PROP_BACKGROUND_MODE = "backgroundMode";
     const PROP_ALERTS_ENABLED = "alertsEnabled";
@@ -90,6 +91,11 @@ module RacePaceCalc {
 
     function getShowFinishDelta() as Boolean {
         var v = Properties.getValue(PROP_SHOW_FINISH_DELTA);
+        return (v == null) ? false : v;
+    }
+
+    function getShowHeartRate() as Boolean {
+        var v = Properties.getValue(PROP_SHOW_HEART_RATE);
         return (v == null) ? false : v;
     }
 
@@ -273,6 +279,48 @@ module RacePaceCalc {
             return hours.format("%d") + ":" + mins.format("%02d") + ":" + secs.format("%02d");
         }
         return mins.format("%d") + ":" + secs.format("%02d");
+    }
+
+    // Which HR zone (1-5) a heart rate falls in, or 0 if below zone 1 or
+    // unknown. `zones` is UserProfile.getHeartRateZones() output:
+    // [zone 1 min, zone 1 max, zone 2 max, zone 3 max, zone 4 max, zone 5 max].
+    function heartRateZone(hr as Number?, zones as Array<Number>?) as Number {
+        if (hr == null || hr <= 0 || zones == null || zones.size() < 6) {
+            return 0;
+        }
+        if (hr < zones[0]) {
+            return 0;
+        }
+        for (var z = 1; z <= 4; z += 1) {
+            if (hr <= zones[z]) {
+                return z;
+            }
+        }
+        return 5;
+    }
+
+    // Garmin-style zone colours: grey, blue, green, orange, red.
+    function heartRateZoneColor(zone as Number) as Number {
+        if (zone == 1) {
+            return 0xAAAAAA;
+        } else if (zone == 2) {
+            return 0x00AAFF;
+        } else if (zone == 3) {
+            return 0x00AA00;
+        } else if (zone == 4) {
+            return 0xFF5500;
+        }
+        return 0xFF0000;
+    }
+
+    // White text on dark backgrounds, black on light ones, using
+    // perceived brightness (ITU-R BT.601 weights, scaled by 1000).
+    function contrastTextColor(bgColor as Number) as Number {
+        var r = (bgColor >> 16) & 0xFF;
+        var g = (bgColor >> 8) & 0xFF;
+        var b = bgColor & 0xFF;
+        var brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        return (brightness > 150) ? 0x000000 : 0xFFFFFF;
     }
 
     // Formats a distance in meters using the configured display unit.

@@ -2,6 +2,7 @@ import Toybox.Activity;
 import Toybox.Attention;
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.UserProfile;
 import Toybox.WatchUi;
 
 // Compact race data field: current pace, average pace, target pace, and
@@ -38,6 +39,13 @@ class RacePaceFieldView extends WatchUi.DataField {
     private var _finishDeltaSec as Number = 0;
     private var _splitPaceSec as Float = 0.0;
 
+    // Heart rate (bpm, null when there's no reading) and the user's HR
+    // zone boundaries, loaded once on first use - zones only change in
+    // the user profile, not mid-activity.
+    private var _heartRate as Number?;
+    private var _hrZones as Array<Number>?;
+    private var _hrZonesLoaded as Boolean = false;
+
     private var _checkpointDistanceM as Float = 0.0;
     private var _checkpointTimeSec as Float = 0.0;
 
@@ -63,6 +71,11 @@ class RacePaceFieldView extends WatchUi.DataField {
 
     public function compute(info as Activity.Info) as Void {
         _targetPaceSec = RacePaceCalc.targetPaceSecPerUnit();
+        _heartRate = info.currentHeartRate;
+        if (!_hrZonesLoaded) {
+            _hrZonesLoaded = true;
+            _hrZones = loadHeartRateZones();
+        }
 
         var elapsedDistanceM = info.elapsedDistance;
         var elapsedTimeSec = (info.timerTime != null) ? info.timerTime / 1000.0 : null;
@@ -114,6 +127,17 @@ class RacePaceFieldView extends WatchUi.DataField {
         if (RacePaceCalc.getAlertsEnabled()) {
             checkPaceAlert(elapsedTimeSec);
         }
+    }
+
+    private function loadHeartRateZones() as Array<Number>? {
+        if (!(Toybox has :UserProfile) || !(UserProfile has :getHeartRateZones)) {
+            return null;
+        }
+        var sport = UserProfile.HR_ZONE_SPORT_GENERIC;
+        if (UserProfile has :getCurrentSport) {
+            sport = UserProfile.getCurrentSport();
+        }
+        return UserProfile.getHeartRateZones(sport);
     }
 
     // Pace-alert state machine. Tracks how long the runner has been
@@ -225,6 +249,7 @@ class RacePaceFieldView extends WatchUi.DataField {
         var showDelta = RacePaceCalc.getShowDelta();
         var showFinishDelta = RacePaceCalc.getShowFinishDelta();
         var showFinish = RacePaceCalc.getShowProjectedFinish();
+        var showHeartRate = RacePaceCalc.getShowHeartRate();
 
         // Never let the top row end up empty - the layout below divides
         // the width by the top-row column count, and a blank top half
@@ -307,7 +332,7 @@ class RacePaceFieldView extends WatchUi.DataField {
 
         var colCount = topLabels.size();
 
-        // Reserve the bottom band only if Projected Finish is shown;
+        // Reserve the bottom band only if Projected Finish or Heart Rate is shown;
         // otherwise the top row gets the full height to grow into. A
         // plain 50/50 split, regardless of column count - varying this
         // by column count kept trading one bad case for another. The
@@ -315,7 +340,8 @@ class RacePaceFieldView extends WatchUi.DataField {
         // positioned from this same value (never a separate hardcoded
         // fraction of h) so they always agree with where the top band
         // actually ends.
-        var topBandBottom = showFinish ? (h * 0.50) : h;
+        var showBottom = showFinish || showHeartRate;
+        var topBandBottom = showBottom ? (h * 0.50) : h;
         // The top margin exists so a row's outer labels (near col1/
         // col3, close to the round bezel) don't clip under the curve.
         // That's only avoidable with exactly 1 column, which sits dead
@@ -380,28 +406,70 @@ class RacePaceFieldView extends WatchUi.DataField {
             dc.drawText(colCenter, valueH, topValueFont, topValues[i], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
-        if (!showFinish) {
+        if (!showBottom) {
             return;
         }
 
         dc.setColor(fgColor, Graphics.COLOR_TRANSPARENT);
         dc.drawLine(w * 0.15, topBandBottom, w * 0.85, topBandBottom);
 
-        // Bottom: projected finish time, full width (safe near the
-        // bottom edge since it's centered and narrower than the row
-        // above). Positioned as fractions of the space actually left
-        // below topBandBottom (not of h), so this row stays correctly
-        // placed under the divider wherever that divider ends up.
+        // Bottom row: Projected Finish and/or Heart Rate. Positioned as
+        // fractions of the space actually left below topBandBottom (not
+        // of h), so this row stays correctly placed under the divider
+        // wherever that divider ends up. With both shown, the row splits
+        // into two columns pulled in from the edges, since the round
+        // screen narrows towards the bottom.
         var bottomBandHeight = h - topBandBottom;
-        var finishLabelH = topBandBottom + bottomBandHeight * 0.24;
-        var finishValueH = topBandBottom + bottomBandHeight * 0.64;
-        var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
-        var finishFont = fitFont(dc, [finishValue], w * 0.85, bottomBandHeight * 0.56, VALUE_FONTS);
+        var bottomLabelH = topBandBottom + bottomBandHeight * 0.24;
+        var bothBottom = showFinish && showHeartRate;
+        var bottomValueH = topBandBottom + bottomBandHeight * (bothBottom ? 0.62 : 0.64);
+        var bottomColWidth = bothBottom ? (w * 0.36) : (w * 0.85);
+        var finishCenter = bothBottom ? (w * 0.32) : (w / 2);
+        var hrCenter = bothBottom ? (w * 0.68) : (w / 2);
 
-        dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, finishLabelH, Graphics.FONT_XTINY, "PROJ. FINISH", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(fgColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(w / 2, finishValueH, finishFont, finishValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
+        var hrValue = (_heartRate != null && _heartRate > 0) ? _heartRate.format("%d") : "--";
+
+        // Both columns share one font so the row reads as a pair. HR is
+        // measured with a little padding for its zone-colour background.
+        var bottomValues = [] as Array<String>;
+        if (showFinish) {
+            bottomValues.add(finishValue);
+        }
+        if (showHeartRate) {
+            bottomValues.add(hrValue + "00");
+        }
+        var bottomFont = fitFont(dc, bottomValues, bottomColWidth, bottomBandHeight * (bothBottom ? 0.50 : 0.56), VALUE_FONTS);
+
+        if (showFinish) {
+            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(finishCenter, bottomLabelH, Graphics.FONT_XTINY, bothBottom ? "FINISH" : "PROJ. FINISH", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.setColor(fgColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(finishCenter, bottomValueH, bottomFont, finishValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
+
+        if (showHeartRate) {
+            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(hrCenter, bottomLabelH, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+            var hrTextColor = fgColor;
+            var zone = RacePaceCalc.heartRateZone(_heartRate, _hrZones);
+            if (zone > 0) {
+                // Zone-colour background behind the value, sized from
+                // the digits' visual height (the font's ascent) rather
+                // than the full line height, which includes empty space.
+                var zoneColor = RacePaceCalc.heartRateZoneColor(zone);
+                var textW = dc.getTextDimensions(hrValue, bottomFont)[0];
+                var boxH = Graphics.getFontAscent(bottomFont) * 1.15;
+                var padX = boxH * 0.30;
+                var boxW = textW + padX * 2;
+                dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
+                dc.fillRoundedRectangle(hrCenter - boxW / 2, bottomValueH - boxH / 2, boxW, boxH, boxH * 0.25);
+                hrTextColor = RacePaceCalc.contrastTextColor(zoneColor);
+            }
+            dc.setColor(hrTextColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(hrCenter, bottomValueH, bottomFont, hrValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
     }
 
     // Picks the largest font in `fonts` under which every string in
