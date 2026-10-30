@@ -226,10 +226,11 @@ class RacePaceFieldView extends WatchUi.DataField {
         var showFinishDelta = RacePaceCalc.getShowFinishDelta();
         var showFinish = RacePaceCalc.getShowProjectedFinish();
 
-        // Never let every field end up hidden at once - a blank field
-        // would be worse than a redundant Current Pace, so it's forced
-        // back on if the user has switched off everything else too.
-        if (!showCurrent && !showAverage && !showSplit && !showTarget && !showDelta && !showFinishDelta && !showFinish) {
+        // Never let the top row end up empty - the layout below divides
+        // the width by the top-row column count, and a blank top half
+        // would be worse than a redundant Current Pace anyway, so it's
+        // forced back on if every other top-row field is switched off.
+        if (!showCurrent && !showAverage && !showSplit && !showTarget && !showDelta && !showFinishDelta) {
             showCurrent = true;
         }
 
