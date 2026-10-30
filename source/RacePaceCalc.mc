@@ -286,14 +286,13 @@ module RacePaceCalc {
         return mins.format("%d") + ":" + secs.format("%02d");
     }
 
-    // Which HR zone (1-5) a heart rate falls in, or 0 if below zone 1 or
-    // unknown. `zones` is UserProfile.getHeartRateZones() output:
+    // Which HR zone (1-5) a heart rate falls in, or 0 if there's no
+    // reading or no zones. Below zone 1 counts as zone 1, so an easy
+    // warm-up still gets a colour rather than looking broken. `zones` is
+    // UserProfile.getHeartRateZones() output:
     // [zone 1 min, zone 1 max, zone 2 max, zone 3 max, zone 4 max, zone 5 max].
     function heartRateZone(hr as Number?, zones as Array<Number>?) as Number {
         if (hr == null || hr <= 0 || zones == null || zones.size() < 6) {
-            return 0;
-        }
-        if (hr < zones[0]) {
             return 0;
         }
         for (var z = 1; z <= 4; z += 1) {

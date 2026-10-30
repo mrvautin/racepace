@@ -89,7 +89,7 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 | Ahead/Behind | on | How far ahead of or behind your target pace you're currently running, updated live. Green means ahead, red means behind. Compares against target pace even if Target Pace itself is hidden. |
 | Finish +/- | off | How far ahead of or behind your goal finish time you're projected to end up, based on your pace so far — not the same as Ahead/Behind, which compares your instantaneous pace rather than your likely finish. |
 | Projected Finish | on | Your estimated finish time if you keep running at your current pace — a live "if you keep this up" estimate, not a fixed prediction from your goal. |
-| Heart Rate | off | Your current heart rate, shown in the bottom row beside Projected Finish (or on its own if Projected Finish is off). The background shows your HR zone from your Garmin user profile: grey (zone 1), blue (2), green (3), orange (4), red (5), with white or black text, whichever is easier to read. |
+| Heart Rate | off | Your current heart rate, shown in the bottom row beside Projected Finish (or on its own if Projected Finish is off). The background shows your HR zone from your Garmin user profile: grey (zone 1 or below), blue (2), green (3), orange (4), red (5), with white or black text, whichever is easier to read. |
 
 Turn a field off and the remaining fields grow to fill the space, so the layout stays balanced whatever combination you pick.
 
