@@ -153,13 +153,14 @@ See the list below. If your watch isn't listed, [open an issue on GitHub](https:
 
 ## Compatible devices
 
-- **Forerunner:** 265 / 265S, 955 / 955 Solar, 965
-- **fēnix (Fenix):** 7 / 7S / 7X, 7 Pro / 7S Pro / 7X Pro, 8 (43mm / 47mm / 51mm)
-- **epix:** epix (Gen 2), epix Pro (Gen 2) 42mm / 47mm
-- **Enduro:** Enduro 2
-- **Venu:** 2 / 2S, 3 / 3S
-- **vívoactive (Vivoactive):** 4 / 4S, 5
-- **Also:** quatix 7 / 7 Pro / 7X Solar / 8, tactix 7 / 8
+- **Forerunner:** 165 / 165 Music, 170 / 170 Music, 245 / 245 Music, 255 / 255 Music / 255S / 255S Music, 265 / 265S, 570 (42mm / 47mm), 745, 945 / 945 LTE, 955 / 955 Solar, 965, 970
+- **fēnix (Fenix):** 6 / 6S / 6 Pro / 6S Pro / 6X Pro (incl. Solar, Sapphire and Dual Power), 7 / 7S / 7X, 7 Pro / 7S Pro / 7X Pro (incl. Solar no-Wi-Fi), 8 (43mm / 47mm / 51mm), 8 Solar (47mm / 51mm), 8 Pro, E
+- **epix:** epix (Gen 2), epix Pro (Gen 2) 42mm / 47mm / 51mm
+- **Enduro:** Enduro, Enduro 2, Enduro 3
+- **Venu:** 2 / 2S / 2 Plus, 3 / 3S, 4 (41mm / 45mm)
+- **vívoactive (Vivoactive):** 4 / 4S, 5, 6
+- **Instinct:** Instinct 3 AMOLED (45mm / 50mm)
+- **Also:** MARQ (Gen 2), quatix 6 / 7 / 8, tactix 7 / 8 / Delta, D2 Mach 1 Pro / Air X15
 
 ## Development
 
