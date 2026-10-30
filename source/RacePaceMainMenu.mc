@@ -7,6 +7,8 @@ class RacePaceMainMenu extends WatchUi.Menu2 {
         addItem(new WatchUi.MenuItem("Race Distance", RacePaceCalc.formatDistance(RacePaceCalc.getRaceDistanceM()), :distance, {}));
         addItem(new WatchUi.MenuItem("Finish Time", RacePaceCalc.formatDuration(RacePaceCalc.getFinishTimeSec()), :finishTime, {}));
         addItem(new WatchUi.MenuItem("Units", unitsLabel(), :units, {}));
+        // Same setting as Pace Alerts in the phone settings.
+        addItem(new WatchUi.ToggleMenuItem("Pace Alerts", {:enabled => "On", :disabled => "Off"}, :alerts, RacePaceCalc.getAlertsEnabled(), {}));
     }
 
     private function unitsLabel() as String {
@@ -30,6 +32,11 @@ class RacePaceMainMenu extends WatchUi.Menu2 {
         if (unitsItem != null) {
             unitsItem.setSubLabel(unitsLabel());
         }
+        // Keep the toggle in sync if the phone changed it meanwhile.
+        var alertsItem = getItem(3);
+        if (alertsItem instanceof WatchUi.ToggleMenuItem) {
+            alertsItem.setEnabled(RacePaceCalc.getAlertsEnabled());
+        }
     }
 }
 
@@ -46,6 +53,8 @@ class RacePaceMainMenuDelegate extends WatchUi.Menu2InputDelegate {
             WatchUi.pushView(new RacePaceTimeMenu(), new RacePaceTimeMenuDelegate(), WatchUi.SLIDE_IMMEDIATE);
         } else if (id == :units) {
             WatchUi.pushView(new RacePaceUnitsMenu(), new RacePaceUnitsMenuDelegate(), WatchUi.SLIDE_IMMEDIATE);
+        } else if (id == :alerts && menuItem instanceof WatchUi.ToggleMenuItem) {
+            RacePaceCalc.setAlertsEnabled(menuItem.isEnabled());
         }
     }
 }

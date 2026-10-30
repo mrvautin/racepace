@@ -126,6 +126,14 @@ class RacePaceFieldView extends WatchUi.DataField {
 
         if (RacePaceCalc.getAlertsEnabled()) {
             checkPaceAlert(elapsedTimeSec);
+        } else {
+            // Alerts can now be switched off mid-run from the watch, so
+            // clear any half-finished episode - otherwise switching them
+            // back on could fire straight away from a stale timer.
+            _behindSinceSec = null;
+            _lastAlertSec = null;
+            _alertFiredOnce = false;
+            _alertCutoff = false;
         }
     }
 

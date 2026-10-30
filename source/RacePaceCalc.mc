@@ -109,11 +109,16 @@ module RacePaceCalc {
         return (v == null) ? BACKGROUND_BLACK : v.toNumber();
     }
 
-    // On-device pace alerts: off by default (opt-in). Phone-configured
-    // only - see RacePaceFieldView for the alert state machine itself.
+    // On-device pace alerts: off by default (opt-in). Can be switched
+    // on/off from the phone or the watch's RacePace settings menu - see
+    // RacePaceFieldView for the alert state machine itself.
     function getAlertsEnabled() as Boolean {
         var v = Properties.getValue(PROP_ALERTS_ENABLED);
         return (v == null) ? false : v;
+    }
+
+    function setAlertsEnabled(enabled as Boolean) as Void {
+        Properties.setValue(PROP_ALERTS_ENABLED, enabled);
     }
 
     // How many continuous seconds behind target pace before the first

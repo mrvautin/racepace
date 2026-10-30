@@ -72,10 +72,11 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 | Race Distance | 5K, 10K, Half Marathon, Marathon, or any custom distance          |
 | Finish Time   | your goal time — opens Hours / Minutes / Seconds rows, each picked from a scrollable list |
 | Units         | kilometers or miles                                             |
+| Pace Alerts   | on or off (same setting as Pace Alerts in the phone settings)   |
 
 <img src="resources/images/settings-screen.png" width="220" alt="RacePace settings menu on the watch showing Race Distance, Finish Time, and Units">
 
-**From your phone:** prefer to set it up beforehand? Open Garmin Connect Mobile → **Devices** → your watch → **Data Fields / Connect IQ Store** → RacePace → **Settings**, and enter the same three values. Changes sync to the watch automatically.
+**From your phone:** prefer to set it up beforehand? Open Garmin Connect Mobile → **Devices** → your watch → **Data Fields / Connect IQ Store** → RacePace → **Settings**, and enter the same values. Changes sync to the watch automatically.
 
 **Choosing which fields show:** which fields appear on screen, and how sensitive Current Pace is to GPS noise, is configured from your phone only — Garmin Connect Mobile/Express → **Devices** → your watch → **Data Fields / Connect IQ Store** → RacePace → **Settings**.
 
@@ -100,7 +101,7 @@ Turn a field off and the remaining fields grow to fill the space, so the layout 
 | 100 m | Default — a balance of responsiveness and smoothness. |
 | 200 m | Smoother reading, but slower to catch real pace changes. |
 
-**Pace Alerts:** off by default. When turned on, RacePace nudges you on-device if you fall behind target pace for too long, and again when you get back on pace — so you don't have to keep glancing down. Also phone-configured:
+**Pace Alerts:** off by default. When turned on, RacePace nudges you on-device if you fall behind target pace for too long, and again when you get back on pace — so you don't have to keep glancing down. Switch it on or off from the watch's RacePace settings menu or from your phone; the alert timing is set from your phone:
 
 | Setting | Options | Description |
 | ------- | ------- | ----------- |
@@ -146,7 +147,7 @@ No. Race distance, goal finish time and units can all be set on the watch. Displ
 Yes. Turn on **Show Heart Rate** in the phone settings (off by default). It appears beside Projected Finish, coloured by your heart rate zone, and doesn't push any other field off the screen.
 
 **Will it vibrate if I fall behind goal pace?**
-Yes, if you turn on Pace Alerts (off by default). See [Pace Alerts](#3-configure-it) above.
+Yes, if you turn on Pace Alerts (off by default) from the watch's RacePace settings menu or your phone. See [Pace Alerts](#3-configure-it) above.
 
 **Does it work on treadmill or trail runs?**
 It works on any running activity. Pace comes from the watch's speed and distance, so accuracy depends on GPS (outdoors) or your footpod/wrist calibration (indoors).
