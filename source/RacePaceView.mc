@@ -438,14 +438,17 @@ class RacePaceFieldView extends WatchUi.DataField {
         var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
         var hrValue = (_heartRate != null && _heartRate > 0) ? _heartRate.format("%d") : "--";
 
-        // Both columns share one font so the row reads as a pair. HR is
+        // Both columns share one font so the row reads as a pair. The
+        // font is fitted to fixed widest-case templates, not the live
+        // values: digits differ in width, so fitting the live numbers
+        // made the font flip size every few seconds. HR is
         // measured with a little padding for its zone-colour background.
         var bottomValues = [] as Array<String>;
         if (showFinish) {
-            bottomValues.add(finishValue);
+            bottomValues.add(widestDigits(finishValue));
         }
         if (showHeartRate) {
-            bottomValues.add(hrValue + "00");
+            bottomValues.add("88800");
         }
         var bottomFont = fitFont(dc, bottomValues, bottomColWidth, bottomBandHeight * (bothBottom ? 0.50 : 0.56), VALUE_FONTS);
 
@@ -478,6 +481,19 @@ class RacePaceFieldView extends WatchUi.DataField {
             dc.setColor(hrTextColor, Graphics.COLOR_TRANSPARENT);
             dc.drawText(hrCenter, bottomValueH, bottomFont, hrValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
+    }
+
+    // Replaces every digit with "8" (the widest digit in Garmin's number
+    // fonts), so text keeps its shape (e.g. M:SS vs H:MM:SS) but its
+    // measured width no longer changes as the digits tick over.
+    private function widestDigits(text as String) as String {
+        var chars = text.toCharArray();
+        var out = "";
+        for (var i = 0; i < chars.size(); i += 1) {
+            var c = chars[i];
+            out += (c >= '0' && c <= '9') ? "8" : c.toString();
+        }
+        return out;
     }
 
     // Picks the largest font in `fonts` under which every string in

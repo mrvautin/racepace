@@ -10,7 +10,7 @@ RacePace is a **free** Garmin Connect IQ data field for runners chasing a goal t
 
 ## What problem does it solve?
 
-On race day, most runners want answers to two questions: *"Am I on pace for my goal time?"* and *"What time am I going to finish in?"* Garmin's stock screens show your pace, but leave you doing mental maths against your goal mid-race. RacePace does that maths for you.
+On race day, most runners want answers to two questions: _"Am I on pace for my goal time?"_ and _"What time am I going to finish in?"_ Garmin's stock screens show your pace, but leave you doing mental maths against your goal mid-race. RacePace does that maths for you.
 
 Use it if you:
 
@@ -67,12 +67,12 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 4. Select **RacePace**.
 5. Press **MENU** to open RacePace's own settings.
 
-| Setting       | Description                                                    |
-| ------------- | ---------------------------------------------------------------- |
-| Race Distance | 5K, 10K, Half Marathon, Marathon, or any custom distance          |
+| Setting       | Description                                                                               |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| Race Distance | 5K, 10K, Half Marathon, Marathon, or any custom distance                                  |
 | Finish Time   | your goal time — opens Hours / Minutes / Seconds rows, each picked from a scrollable list |
-| Units         | kilometers or miles                                             |
-| Pace Alerts   | on or off (same setting as Pace Alerts in the phone settings)   |
+| Units         | kilometers or miles                                                                       |
+| Pace Alerts   | on or off (same setting as Pace Alerts in the phone settings)                             |
 
 <img src="resources/images/settings-screen.png" width="220" alt="RacePace settings menu on the watch showing Race Distance, Finish Time, and Units">
 
@@ -80,32 +80,32 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 
 **Choosing which fields show:** which fields appear on screen, and how sensitive Current Pace is to GPS noise, is configured from your phone only — Garmin Connect Mobile/Express → **Devices** → your watch → **Data Fields / Connect IQ Store** → RacePace → **Settings**.
 
-| Field | Default | Description |
-| ----- | ------- | ----------- |
-| Current Pace | always on | Your real-time pace, smoothed over the Pace Smoothing distance below. |
-| Average Pace | on | Your average pace across the whole activity so far, from the start of the run to now. |
-| Km/Mi Split Pace | off | Your live pace for the km or mile you're currently in — resets and starts timing fresh every time you complete one. |
-| Target Pace | off | The pace you need to hold to hit your goal finish time, worked out from Race Distance and Finish Time. |
-| Ahead/Behind | on | How far ahead of or behind your target pace you're currently running, updated live. Green means ahead, red means behind. Compares against target pace even if Target Pace itself is hidden. |
-| Finish +/- | off | How far ahead of or behind your goal finish time you're projected to end up, based on your pace so far — not the same as Ahead/Behind, which compares your instantaneous pace rather than your likely finish. |
-| Projected Finish | on | Your estimated finish time if you keep running at your current pace — a live "if you keep this up" estimate, not a fixed prediction from your goal. |
-| Heart Rate | off | Your current heart rate, shown in the bottom row beside Projected Finish (or on its own if Projected Finish is off). The background shows your HR zone from your Garmin user profile: grey (zone 1 or below), blue (2), green (3), orange (4), red (5), with white or black text, whichever is easier to read. |
+| Field            | Default   | Description                                                                                                                                                                                                                                             |
+| ---------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Current Pace     | always on | Your real-time pace, smoothed over the Pace Smoothing distance below.                                                                                                                                                                                   |
+| Average Pace     | on        | Your average pace across the whole activity so far, from the start of the run to now.                                                                                                                                                                   |
+| Km/Mi Split Pace | off       | Your live pace for the km or mile you're currently in — resets and starts timing fresh every time you complete one.                                                                                                                                     |
+| Target Pace      | off       | The pace you need to hold to hit your goal finish time, worked out from Race Distance and Finish Time.                                                                                                                                                  |
+| Ahead/Behind     | on        | How far ahead of or behind your target pace you're currently running, updated live. Green means ahead, red means behind. Compares against target pace even if Target Pace itself is hidden.                                                             |
+| Finish +/-       | off       | How far ahead of or behind your goal finish time you're projected to end up, based on your pace so far — not the same as Ahead/Behind, which compares your instantaneous pace rather than your likely finish.                                           |
+| Projected Finish | on        | Your estimated finish time if you keep running at your current pace — a live "if you keep this up" estimate, not a fixed prediction from your goal.                                                                                                     |
+| Heart Rate       | off       | Your current heart rate, shown in the bottom row beside Projected Finish (or on its own if Projected Finish is off). The background shows your HR zone from your Garmin user profile: grey (zone 1 or below), blue (2), green (3), orange (4), red (5). |
 
 Turn a field off and the remaining fields grow to fill the space, so the layout stays balanced whatever combination you pick.
 
 **Pace Smoothing:** Current Pace is averaged over a short rolling distance rather than raw instantaneous GPS speed, so it doesn't jump around under trees or between buildings. This is also phone-configured:
 
-| Option | Description |
-| ------ | ----------- |
-| 50 m | More responsive to pace changes, but shows more raw GPS jitter. |
-| 100 m | Default — a balance of responsiveness and smoothness. |
-| 200 m | Smoother reading, but slower to catch real pace changes. |
+| Option | Description                                                     |
+| ------ | --------------------------------------------------------------- |
+| 50 m   | More responsive to pace changes, but shows more raw GPS jitter. |
+| 100 m  | Default — a balance of responsiveness and smoothness.           |
+| 200 m  | Smoother reading, but slower to catch real pace changes.        |
 
 **Pace Alerts:** off by default. When turned on, RacePace nudges you on-device if you fall behind target pace for too long, and again when you get back on pace — so you don't have to keep glancing down. Switch it on or off from the watch's RacePace settings menu or from your phone; the alert timing is set from your phone:
 
-| Setting | Options | Description |
-| ------- | ------- | ----------- |
-| Pace Alerts | on / **off** | Master switch for alerts. Everything below only applies once this is on. |
+| Setting                     | Options         | Description                                                                           |
+| --------------------------- | --------------- | ------------------------------------------------------------------------------------- |
+| Pace Alerts                 | on / **off**    | Master switch for alerts. Everything below only applies once this is on.              |
 | Alert After Behind Pace For | 15s / 30s / 60s | How long you need to be continuously behind target pace before the first alert fires. |
 
 Once the first alert fires, RacePace repeats it every 60 seconds for as long as you're still behind pace, then stops alerting altogether after 5 minutes — so it nudges you a few times rather than nagging indefinitely if you've deliberately backed off (a hill, a walk break). The moment you're back on pace, you get a single "back on pace" alert and the whole cycle resets, ready to trigger again if you fall behind later. Each alert type has its own vibration pattern (where your watch has a vibration motor) so you can tell them apart without looking.
@@ -122,15 +122,15 @@ Whether you're chasing a PB, pacing a training run, or just want a clearer view 
 
 Garmin watches already include some pacing tools. RacePace is built to complement them:
 
-| | RacePace | Virtual Partner | PacePro | Race Predictor |
-| --- | --- | --- | --- | --- |
-| Set up with just distance + goal time | ✅ | pace only | needs a plan built for a course/distance | no goal input |
-| Live ahead/behind your goal pace | ✅ | ✅ | ✅ (per split) | ❌ |
-| Live projected finish time vs. your goal | ✅ | ❌ | ❌ | estimate from fitness, not your live run |
-| Current, average, split and target pace on one screen | ✅ | ❌ | ❌ | ❌ |
-| Set up entirely on the watch, no phone needed | ✅ | ✅ | varies by watch | n/a |
+|                                                       | RacePace | Virtual Partner | PacePro                                  | Race Predictor                           |
+| ----------------------------------------------------- | -------- | --------------- | ---------------------------------------- | ---------------------------------------- |
+| Set up with just distance + goal time                 | ✅       | pace only       | needs a plan built for a course/distance | no goal input                            |
+| Live ahead/behind your goal pace                      | ✅       | ✅              | ✅ (per split)                           | ❌                                       |
+| Live projected finish time vs. your goal              | ✅       | ❌              | ❌                                       | estimate from fitness, not your live run |
+| Current, average, split and target pace on one screen | ✅       | ❌              | ❌                                       | ❌                                       |
+| Set up entirely on the watch, no phone needed         | ✅       | ✅              | varies by watch                          | n/a                                      |
 
-If you just want one screen that answers *"am I on track for my goal time?"* with no course planning, RacePace is the simplest option. You can still use it alongside PacePro or Virtual Partner on other data screens.
+If you just want one screen that answers _"am I on track for my goal time?"_ with no course planning, RacePace is the simplest option. You can still use it alongside PacePro or Virtual Partner on other data screens.
 
 ## FAQ
 
