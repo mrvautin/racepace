@@ -1,4 +1,4 @@
-<img src="resources/images/hero.png" alt="RacePace — a Garmin watch showing current pace, target pace, ahead/behind delta, and projected finish time">
+<img src="resources/images/hero.png" alt="RacePace, free goal pace data field for Garmin: a watch showing current and average pace, 5 seconds ahead of goal pace, a projected 3:28:40 marathon finish, and heart rate in zone colours">
 
 # RacePace
 
