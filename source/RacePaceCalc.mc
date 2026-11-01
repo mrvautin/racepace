@@ -20,6 +20,7 @@ module RacePaceCalc {
     const PROP_SHOW_SPLIT = "showSplitPace";
     const PROP_SHOW_FINISH_DELTA = "showFinishDelta";
     const PROP_SHOW_HEART_RATE = "showHeartRate";
+    const PROP_SHOW_AVG_HEART_RATE = "showAvgHeartRate";
     const PROP_PACE_SMOOTHING_M = "paceSmoothingM";
     const PROP_BACKGROUND_MODE = "backgroundMode";
     const PROP_ALERTS_ENABLED = "alertsEnabled";
@@ -96,6 +97,11 @@ module RacePaceCalc {
 
     function getShowHeartRate() as Boolean {
         var v = Properties.getValue(PROP_SHOW_HEART_RATE);
+        return (v == null) ? false : v;
+    }
+
+    function getShowAvgHeartRate() as Boolean {
+        var v = Properties.getValue(PROP_SHOW_AVG_HEART_RATE);
         return (v == null) ? false : v;
     }
 

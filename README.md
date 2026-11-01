@@ -32,9 +32,10 @@ RacePace shows exactly what you need, when you need it:
 - **Ahead/Behind** — how far you're ahead of or behind target pace, updated live
 - **Finish +/-** — how far ahead or behind your goal finish time you're projected to end up
 - **Projected Finish** — your estimated finish time based on current effort
-- **Heart Rate** (optional) — your current heart rate on a background coloured by HR zone
+- **Heart Rate** — your current heart rate on a background coloured by HR zone
+- **Average Heart Rate** — your average heart rate over the whole activity, also zone-coloured
 
-No clutter, no digging through menus mid-race — just the numbers that matter, laid out clearly so you can check your progress with a glance at your wrist. Every field except Current Pace can be turned on or off, and whatever's left grows to fill the space.
+No clutter, no digging through menus mid-race — just the numbers that matter, laid out clearly so you can check your progress with a glance at your wrist. Every field can be turned on or off, and whatever's left grows to fill the space. Out of the box you get Current Pace, Average Pace, Ahead/Behind and Projected Finish.
 
 Optionally, RacePace can also nudge you on-device when you drift off pace — see **Pace Alerts** below.
 
@@ -82,7 +83,7 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 
 | Field            | Default   | Description                                                                                                                                                                                                                                             |
 | ---------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Current Pace     | always on | Your real-time pace, smoothed over the Pace Smoothing distance below.                                                                                                                                                                                   |
+| Current Pace     | on        | Your real-time pace, smoothed over the Pace Smoothing distance below.                                                                                                                                                                                   |
 | Average Pace     | on        | Your average pace across the whole activity so far, from the start of the run to now.                                                                                                                                                                   |
 | Km/Mi Split Pace | off       | Your live pace for the km or mile you're currently in — resets and starts timing fresh every time you complete one.                                                                                                                                     |
 | Target Pace      | off       | The pace you need to hold to hit your goal finish time, worked out from Race Distance and Finish Time.                                                                                                                                                  |
@@ -90,6 +91,9 @@ Fully configurable, right on your watch. Set your race distance, target finish t
 | Finish +/-       | off       | How far ahead of or behind your goal finish time you're projected to end up, based on your pace so far — not the same as Ahead/Behind, which compares your instantaneous pace rather than your likely finish.                                           |
 | Projected Finish | on        | Your estimated finish time if you keep running at your current pace — a live "if you keep this up" estimate, not a fixed prediction from your goal.                                                                                                     |
 | Heart Rate       | off       | Your current heart rate, shown in the bottom row beside Projected Finish (or on its own if Projected Finish is off). The background shows your HR zone from your Garmin user profile: grey (zone 1 or below), blue (2), green (3), orange (4), red (5). |
+| Average HR       | off       | Your average heart rate across the whole activity so far (paused time excluded), shown in the bottom row after Heart Rate and zone-coloured the same way. With all three bottom fields on, values get smaller to fit.                                   |
+
+The top row shows up to three pace fields. If you switch on more than three, it shows the first three in this order: Current Pace, Ahead/Behind, Average Pace, Target Pace, Km/Mi Split Pace, Finish +/-. If you switch off every top-row field, Current Pace comes back on so the screen is never half empty. The bottom row holds Projected Finish, Heart Rate and Average Heart Rate.
 
 Turn a field off and the remaining fields grow to fill the space, so the layout stays balanced whatever combination you pick.
 
@@ -144,7 +148,7 @@ Yes. Choose kilometers or miles in settings; all paces show as min/km or min/mil
 No. Race distance, goal finish time and units can all be set on the watch. Display options (which fields show, pace smoothing, background colour, pace alerts) are set from Garmin Connect Mobile or Garmin Express.
 
 **Can it show my heart rate?**
-Yes. Turn on **Show Heart Rate** in the phone settings (off by default). It appears beside Projected Finish, coloured by your heart rate zone, and doesn't push any other field off the screen.
+Yes. Turn on **Show Heart Rate** in the phone settings (off by default). It appears beside Projected Finish, coloured by your heart rate zone, and doesn't push any other field off the screen. Turn on **Show Average Heart Rate** too for your whole-activity average.
 
 **Will it vibrate if I fall behind goal pace?**
 Yes, if you turn on Pace Alerts (off by default) from the watch's RacePace settings menu or your phone. See [Pace Alerts](#3-configure-it) above.

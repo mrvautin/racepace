@@ -55,6 +55,10 @@
             <settingConfig type="boolean" />
         </setting>
 
+        <setting propertyKey="@Properties.showAvgHeartRate" title="@Strings.showAvgHeartRateTitle">
+            <settingConfig type="boolean" />
+        </setting>
+
         <setting propertyKey="@Properties.paceSmoothingM" title="@Strings.paceSmoothingTitle">
             <settingConfig type="list">
                 <listEntry value="50">@Strings.smoothing50</listEntry>

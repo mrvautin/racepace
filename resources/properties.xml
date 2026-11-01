@@ -45,6 +45,8 @@
             default - opt-in.
         -->
         <property id="showHeartRate" type="boolean">false</property>
+        <!-- Whole-activity average heart rate, also in the bottom row. Off by default. -->
+        <property id="showAvgHeartRate" type="boolean">false</property>
 
         <!--
             Current-pace smoothing window, in meters. Phone-configured

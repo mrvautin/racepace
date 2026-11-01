@@ -43,6 +43,7 @@ class RacePaceFieldView extends WatchUi.DataField {
     // zone boundaries, loaded once on first use - zones only change in
     // the user profile, not mid-activity.
     private var _heartRate as Number?;
+    private var _avgHeartRate as Number?;
     private var _hrZones as Array<Number>?;
     private var _hrZonesLoaded as Boolean = false;
 
@@ -72,6 +73,8 @@ class RacePaceFieldView extends WatchUi.DataField {
     public function compute(info as Activity.Info) as Void {
         _targetPaceSec = RacePaceCalc.targetPaceSecPerUnit();
         _heartRate = info.currentHeartRate;
+        // Garmin's own whole-activity average (excludes paused time).
+        _avgHeartRate = info.averageHeartRate;
         if (!_hrZonesLoaded) {
             _hrZonesLoaded = true;
             _hrZones = loadHeartRateZones();
@@ -258,6 +261,7 @@ class RacePaceFieldView extends WatchUi.DataField {
         var showFinishDelta = RacePaceCalc.getShowFinishDelta();
         var showFinish = RacePaceCalc.getShowProjectedFinish();
         var showHeartRate = RacePaceCalc.getShowHeartRate();
+        var showAvgHeartRate = RacePaceCalc.getShowAvgHeartRate();
 
         // Never let the top row end up empty - the layout below divides
         // the width by the top-row column count, and a blank top half
@@ -348,7 +352,7 @@ class RacePaceFieldView extends WatchUi.DataField {
         // positioned from this same value (never a separate hardcoded
         // fraction of h) so they always agree with where the top band
         // actually ends.
-        var showBottom = showFinish || showHeartRate;
+        var showBottom = showFinish || showHeartRate || showAvgHeartRate;
         var topBandBottom = showBottom ? (h * 0.50) : h;
         // The top margin exists so a row's outer labels (near col1/
         // col3, close to the round bezel) don't clip under the curve.
@@ -421,66 +425,129 @@ class RacePaceFieldView extends WatchUi.DataField {
         dc.setColor(fgColor, Graphics.COLOR_TRANSPARENT);
         dc.drawLine(w * 0.15, topBandBottom, w * 0.85, topBandBottom);
 
-        // Bottom row: Projected Finish and/or Heart Rate. Positioned as
+        // Bottom row: up to three columns - Projected Finish, Heart
+        // Rate and Average Heart Rate, in that order. Positioned as
         // fractions of the space actually left below topBandBottom (not
         // of h), so this row stays correctly placed under the divider
-        // wherever that divider ends up. With both shown, the row splits
-        // into two columns pulled in from the edges, since the round
-        // screen narrows towards the bottom.
+        // wherever that divider ends up. Multiple columns are pulled in
+        // from the edges, since the round screen narrows towards the
+        // bottom.
+        var bottomLabels = [] as Array<String>;
+        var bottomValues = [] as Array<String>;
+        var bottomTemplates = [] as Array<String>;
+        // Heart rate value per column (null for Projected Finish), used
+        // to pick that column's zone-colour background.
+        var bottomHr = [] as Array<Number?>;
+
+        if (showFinish) {
+            var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
+            bottomLabels.add("FINISH");
+            bottomValues.add(finishValue);
+            bottomTemplates.add(widestDigits(finishValue));
+            bottomHr.add(null);
+        }
+        if (showHeartRate) {
+            bottomLabels.add("HR");
+            bottomValues.add(formatHeartRate(_heartRate));
+            bottomHr.add(_heartRate);
+        }
+        if (showAvgHeartRate) {
+            bottomLabels.add("AVG HR");
+            bottomValues.add(formatHeartRate(_avgHeartRate));
+            bottomHr.add(_avgHeartRate);
+        }
+
+        var bottomCount = bottomValues.size();
+        if (bottomCount == 1 && showFinish) {
+            bottomLabels[0] = "PROJ. FINISH";
+        }
+
         var bottomBandHeight = h - topBandBottom;
         var bottomLabelH = topBandBottom + bottomBandHeight * 0.24;
-        var bothBottom = showFinish && showHeartRate;
-        var bottomValueH = topBandBottom + bottomBandHeight * (bothBottom ? 0.62 : 0.64);
-        var bottomColWidth = bothBottom ? (w * 0.36) : (w * 0.85);
-        var finishCenter = bothBottom ? (w * 0.32) : (w / 2);
-        var hrCenter = bothBottom ? (w * 0.68) : (w / 2);
-
-        var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
-        var hrValue = (_heartRate != null && _heartRate > 0) ? _heartRate.format("%d") : "--";
-
-        // Both columns share one font so the row reads as a pair. The
-        // font is fitted to fixed widest-case templates, not the live
-        // values: digits differ in width, so fitting the live numbers
-        // made the font flip size every few seconds. HR is
-        // measured with a little padding for its zone-colour background.
-        var bottomValues = [] as Array<String>;
-        if (showFinish) {
-            bottomValues.add(widestDigits(finishValue));
-        }
-        if (showHeartRate) {
-            bottomValues.add("88800");
-        }
-        var bottomFont = fitFont(dc, bottomValues, bottomColWidth, bottomBandHeight * (bothBottom ? 0.50 : 0.56), VALUE_FONTS);
-
-        if (showFinish) {
-            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(finishCenter, bottomLabelH, Graphics.FONT_XTINY, bothBottom ? "FINISH" : "PROJ. FINISH", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-            dc.setColor(fgColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(finishCenter, bottomValueH, bottomFont, finishValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        var bottomValueH = topBandBottom + bottomBandHeight * ((bottomCount == 1) ? 0.64 : 0.62);
+        var bottomCenters = [0.50] as Array<Float>;
+        var bottomColWidth = w * 0.85;
+        if (bottomCount == 2) {
+            bottomCenters = [0.32, 0.68] as Array<Float>;
+            bottomColWidth = w * 0.36;
+        } else if (bottomCount == 3) {
+            bottomCenters = [0.23, 0.50, 0.77] as Array<Float>;
+            bottomColWidth = w * 0.25;
         }
 
-        if (showHeartRate) {
-            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(hrCenter, bottomLabelH, Graphics.FONT_XTINY, "HR", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-
-            var hrTextColor = fgColor;
-            var zone = RacePaceCalc.heartRateZone(_heartRate, _hrZones);
-            if (zone > 0) {
-                // Zone-colour background behind the value, sized from
-                // the digits' visual height (the font's ascent) rather
-                // than the full line height, which includes empty space.
-                var zoneColor = RacePaceCalc.heartRateZoneColor(zone);
-                var textW = dc.getTextDimensions(hrValue, bottomFont)[0];
-                var boxH = Graphics.getFontAscent(bottomFont) * 1.15;
-                var padX = boxH * 0.30;
-                var boxW = textW + padX * 2;
-                dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-                dc.fillRoundedRectangle(hrCenter - boxW / 2, bottomValueH - boxH / 2, boxW, boxH, boxH * 0.25);
-                hrTextColor = RacePaceCalc.contrastTextColor(zoneColor);
+        // All columns share one font so the row reads as a set. The font
+        // is fitted to fixed widest-case templates, not the live values:
+        // digits differ in width, so fitting the live numbers made the
+        // font flip size every few seconds. Heart rate columns must also
+        // fit their zone-colour box (see hrBoxSize).
+        var bottomMaxH = bottomBandHeight * ((bottomCount == 1) ? 0.56 : 0.50);
+        var hasHr = showHeartRate || showAvgHeartRate;
+        var bottomFont = Graphics.FONT_XTINY;
+        for (var f = 0; f < VALUE_FONTS.size(); f += 1) {
+            var font = VALUE_FONTS[f];
+            var fits = true;
+            for (var t = 0; t < bottomTemplates.size(); t += 1) {
+                var dims = dc.getTextDimensions(bottomTemplates[t], font);
+                if (dims[0] > bottomColWidth || dims[1] > bottomMaxH) {
+                    fits = false;
+                    break;
+                }
             }
-            dc.setColor(hrTextColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(hrCenter, bottomValueH, bottomFont, hrValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            if (fits && hasHr) {
+                var box = hrBoxSize(dc, font);
+                fits = (box[0] <= bottomColWidth * 0.92) && (box[1] <= bottomMaxH);
+            }
+            if (fits) {
+                bottomFont = font;
+                break;
+            }
         }
+        var hrBox = hasHr ? hrBoxSize(dc, bottomFont) : [0, 0];
+
+        for (var b = 0; b < bottomCount; b += 1) {
+            var cx = w * bottomCenters[b];
+            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, bottomLabelH, Graphics.FONT_XTINY, bottomLabels[b], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+            var textColor = fgColor;
+            var hr = bottomHr[b];
+            var zone = (hr != null) ? RacePaceCalc.heartRateZone(hr, _hrZones) : 0;
+            if (zone > 0) {
+                // Zone-colour background behind the value. Fixed size
+                // per font, so HR and AVG HR boxes match and don't
+                // resize as the number changes.
+                var zoneColor = RacePaceCalc.heartRateZoneColor(zone);
+                var boxW = hrBox[0];
+                var boxH = hrBox[1];
+                dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
+                dc.fillRoundedRectangle(cx - boxW / 2, bottomValueH - boxH / 2, boxW, boxH, boxH * 0.30);
+                textColor = RacePaceCalc.contrastTextColor(zoneColor);
+            }
+            dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(cx, bottomValueH, bottomFont, bottomValues[b], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
+    }
+
+    // Width and height of the heart rate zone-colour box for a font:
+    // room for three digits plus padding. The padding scales with the
+    // font but never drops below a few pixels, so small fonts (e.g.
+    // three bottom columns) don't end up with digits touching the edge.
+    private function hrBoxSize(dc as Dc, font as Graphics.FontType) as Array<Numeric> {
+        var ascent = Graphics.getFontAscent(font);
+        var textW = dc.getTextDimensions("888", font)[0];
+        var padX = ascent * 0.35;
+        if (padX < 8) {
+            padX = 8;
+        }
+        var padY = ascent * 0.15;
+        if (padY < 4) {
+            padY = 4;
+        }
+        return [textW + padX * 2, ascent + padY * 2];
+    }
+
+    private function formatHeartRate(hr as Number?) as String {
+        return (hr != null && hr > 0) ? hr.format("%d") : "--";
     }
 
     // Replaces every digit with "8" (the widest digit in Garmin's number
