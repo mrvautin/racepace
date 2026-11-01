@@ -21,6 +21,8 @@ module RacePaceCalc {
     const PROP_SHOW_FINISH_DELTA = "showFinishDelta";
     const PROP_SHOW_HEART_RATE = "showHeartRate";
     const PROP_SHOW_AVG_HEART_RATE = "showAvgHeartRate";
+    const PROP_SHOW_PROGRESS_RING = "showProgressRing";
+    const PROP_HIGHLIGHT_DELTA = "highlightDelta";
     const PROP_PACE_SMOOTHING_M = "paceSmoothingM";
     const PROP_BACKGROUND_MODE = "backgroundMode";
     const PROP_ALERTS_ENABLED = "alertsEnabled";
@@ -102,6 +104,16 @@ module RacePaceCalc {
 
     function getShowAvgHeartRate() as Boolean {
         var v = Properties.getValue(PROP_SHOW_AVG_HEART_RATE);
+        return (v == null) ? false : v;
+    }
+
+    function getShowProgressRing() as Boolean {
+        var v = Properties.getValue(PROP_SHOW_PROGRESS_RING);
+        return (v == null) ? true : v;
+    }
+
+    function getHighlightDelta() as Boolean {
+        var v = Properties.getValue(PROP_HIGHLIGHT_DELTA);
         return (v == null) ? false : v;
     }
 

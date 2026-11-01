@@ -1,3 +1,8 @@
+// LITE screen for watches that give data fields only 32 KB of memory
+// (see monkey.jungle). The full screen in source-full/ doesn't fit
+// there, so these watches keep this simpler layout: no progress ring,
+// direction arrows or ahead/behind box. Shared logic (settings, pace
+// maths, menus) lives in source/ and is used by both.
 import Toybox.Activity;
 import Toybox.Attention;
 import Toybox.Graphics;

@@ -14,6 +14,8 @@
     <string id="showFinishDeltaTitle">Show Finish +/- (projected finish vs. goal time)</string>
     <string id="showHeartRateTitle">Show Heart Rate (coloured by HR zone)</string>
     <string id="showAvgHeartRateTitle">Show Average Heart Rate (coloured by HR zone average)</string>
+    <string id="showProgressRingTitle">Show Race Progress Ring (distance done vs. goal pace marker)</string>
+    <string id="highlightDeltaTitle">Highlight Ahead/Behind in a coloured box</string>
     <string id="paceSmoothingTitle">Pace Smoothing (distance Current Pace averages over)</string>
     <string id="smoothing50">50 m - more responsive, more GPS jitter</string>
     <string id="smoothing100">100 m - default</string>

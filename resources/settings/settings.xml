@@ -59,6 +59,14 @@
             <settingConfig type="boolean" />
         </setting>
 
+        <setting propertyKey="@Properties.showProgressRing" title="@Strings.showProgressRingTitle">
+            <settingConfig type="boolean" />
+        </setting>
+
+        <setting propertyKey="@Properties.highlightDelta" title="@Strings.highlightDeltaTitle">
+            <settingConfig type="boolean" />
+        </setting>
+
         <setting propertyKey="@Properties.paceSmoothingM" title="@Strings.paceSmoothingTitle">
             <settingConfig type="list">
                 <listEntry value="50">@Strings.smoothing50</listEntry>

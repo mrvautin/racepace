@@ -49,6 +49,16 @@
         <property id="showAvgHeartRate" type="boolean">false</property>
 
         <!--
+            Race progress ring around the screen edge, with a marker for
+            where goal pace would have you. On by default. Only drawn
+            when the field fills the whole (round) screen.
+        -->
+        <property id="showProgressRing" type="boolean">true</property>
+
+        <!-- Ahead/Behind and Finish +/- in a filled green/red box. Off by default. -->
+        <property id="highlightDelta" type="boolean">false</property>
+
+        <!--
             Current-pace smoothing window, in meters. Phone-configured
             only - it's a display-smoothing preference, not a race
             parameter, so it doesn't belong on the watch's own race-setup
