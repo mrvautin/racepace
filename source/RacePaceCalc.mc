@@ -12,15 +12,6 @@ module RacePaceCalc {
     const PROP_UNITS = "distanceUnits";
     const PROP_DISTANCE_DISPLAY = "raceDistanceDisplay";
     const PROP_FINISH_MIN = "finishTimeMin";
-    const PROP_SHOW_CURRENT = "showCurrentPace";
-    const PROP_SHOW_TARGET = "showTargetPace";
-    const PROP_SHOW_DELTA = "showDelta";
-    const PROP_SHOW_FINISH = "showProjectedFinish";
-    const PROP_SHOW_AVERAGE = "showAveragePace";
-    const PROP_SHOW_SPLIT = "showSplitPace";
-    const PROP_SHOW_FINISH_DELTA = "showFinishDelta";
-    const PROP_SHOW_HEART_RATE = "showHeartRate";
-    const PROP_SHOW_AVG_HEART_RATE = "showAvgHeartRate";
     const PROP_SHOW_PROGRESS_RING = "showProgressRing";
     const PROP_HIGHLIGHT_DELTA = "highlightDelta";
     const PROP_PACE_SMOOTHING_M = "paceSmoothingM";
@@ -37,6 +28,46 @@ module RacePaceCalc {
         BACKGROUND_BLACK = 0,
         BACKGROUND_WHITE = 1
     }
+
+    // Every value the field can show. The numbering is also the on-screen
+    // order (left to right within a row) and the order used to decide
+    // which values to drop when a row has too many - see buildRows().
+    enum {
+        ITEM_CURRENT = 0,
+        ITEM_AVERAGE = 1,
+        ITEM_SPLIT = 2,
+        ITEM_TARGET = 3,
+        ITEM_DELTA = 4,
+        ITEM_FINISH_DELTA = 5,
+        ITEM_FINISH = 6,
+        ITEM_DISTANCE = 7,
+        ITEM_ELAPSED = 8,
+        ITEM_HEART_RATE = 9,
+        ITEM_AVG_HEART_RATE = 10
+    }
+
+    // Each item's placement is a phone-settings dropdown (hidden, top
+    // row or bottom row) stored under property "p<item id>" - p0 is
+    // Current Pace, p6 Projected Finish, and so on. Short, computed keys
+    // rather than a table of descriptive names, because every byte counts
+    // on the 32 KB watches (see source-lite/).
+    const ITEM_COUNT = 11;
+
+    enum {
+        POS_HIDDEN = 0,
+        POS_TOP = 1,
+        POS_BOTTOM = 2
+    }
+
+    // More than this many values in one row squeezes each too small to
+    // read at a glance. The "Max 3 values per row" warning in both views
+    // and the "(max 3)" setting labels in strings.xml spell this out -
+    // keep them in step if it changes.
+    const MAX_PER_ROW = 3;
+
+    // Bumped by the app whenever phone settings change, so views know to
+    // rebuild their cached row layout (and re-check it for overflow).
+    var settingsVersion as Number = 0;
 
     const METERS_PER_KM = 1000.0;
     const METERS_PER_MILE = 1609.344;
@@ -62,49 +93,42 @@ module RacePaceCalc {
         return (v == null) ? UNITS_KM : v.toNumber();
     }
 
-    function getShowCurrentPace() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_CURRENT);
-        return (v == null) ? true : v;
-    }
-
-    function getShowTargetPace() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_TARGET);
-        return (v == null) ? false : v;
-    }
-
-    function getShowDelta() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_DELTA);
-        return (v == null) ? true : v;
-    }
-
-    function getShowProjectedFinish() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_FINISH);
-        return (v == null) ? true : v;
-    }
-
-    function getShowAveragePace() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_AVERAGE);
-        return (v == null) ? true : v;
-    }
-
-    function getShowSplitPace() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_SPLIT);
-        return (v == null) ? false : v;
-    }
-
-    function getShowFinishDelta() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_FINISH_DELTA);
-        return (v == null) ? false : v;
-    }
-
-    function getShowHeartRate() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_HEART_RATE);
-        return (v == null) ? false : v;
-    }
-
-    function getShowAvgHeartRate() as Boolean {
-        var v = Properties.getValue(PROP_SHOW_AVG_HEART_RATE);
-        return (v == null) ? false : v;
+    // Splits the placed items into [top row, bottom row, overflowed],
+    // each row a list of ITEM_* ids in on-screen order.
+    //
+    // Garmin Connect's settings screen has no way to cap how many
+    // dropdowns pick the same row, so the cap is enforced here: once a
+    // row holds MAX_PER_ROW items, any further item placed in it is
+    // dropped (earlier items in ITEM_* order win) and `overflowed` is
+    // true so the view can tell the runner why something is missing.
+    //
+    // The top row is never left empty: if only bottom items are chosen
+    // they move up and take the whole field, and if nothing is chosen at
+    // all Current Pace is shown rather than a blank screen.
+    function buildRows() as Array {
+        var top = [] as Array<Number>;
+        var bottom = [] as Array<Number>;
+        var overflowed = false;
+        for (var i = 0; i < ITEM_COUNT; i += 1) {
+            var pos = Properties.getValue("p" + i);
+            var row = (pos == POS_TOP) ? top : ((pos == POS_BOTTOM) ? bottom : null);
+            if (row == null) {
+                continue;
+            }
+            if (row.size() < MAX_PER_ROW) {
+                row.add(i);
+            } else {
+                overflowed = true;
+            }
+        }
+        if (top.size() == 0) {
+            top = bottom;
+            bottom = [] as Array<Number>;
+        }
+        if (top.size() == 0) {
+            top.add(ITEM_CURRENT);
+        }
+        return [top, bottom, overflowed];
     }
 
     function getShowProgressRing() as Boolean {
@@ -336,13 +360,35 @@ module RacePaceCalc {
     }
 
     // White text on dark backgrounds, black on light ones, using
-    // perceived brightness (ITU-R BT.601 weights, scaled by 1000).
+    // perceived brightness (ITU-R BT.601 weights, scaled by 1000). The
+    // cut-off sits low enough that the mid-bright zone colours - blue
+    // (zone 2, ~129) and orange (zone 4, ~126) - get black text, which
+    // is far easier to read mid-run than white on those. Green (~100)
+    // and red (~76) stay white.
     function contrastTextColor(bgColor as Number) as Number {
         var r = (bgColor >> 16) & 0xFF;
         var g = (bgColor >> 8) & 0xFF;
         var b = bgColor & 0xFF;
         var brightness = (r * 299 + g * 587 + b * 114) / 1000;
-        return (brightness > 150) ? 0x000000 : 0xFFFFFF;
+        return (brightness > 115) ? 0x000000 : 0xFFFFFF;
+    }
+
+    // Short on-screen label for each item, indexed by ITEM_* id. Split
+    // Pace's label is the unit ("KM"/"MI"), so it's filled in by
+    // itemLabel().
+    const ITEM_LABELS = ["CUR", "AVG", "", "TGT", "+/-", "FIN+/-", "FINISH", "DIST", "TIME", "HR", "AVG HR"] as Array<String>;
+
+    function itemLabel(item as Number) as String {
+        return (item == ITEM_SPLIT) ? unitLabel().toUpper() : ITEM_LABELS[item];
+    }
+
+    // Distance covered as a bare number in the display unit, e.g. "5.23"
+    // - no unit suffix, since the large number fonts have no letters.
+    function formatDistanceValue(meters as Float?) as String {
+        if (meters == null || meters < 0) {
+            return "--";
+        }
+        return (meters / unitDistanceMeters()).format("%.2f");
     }
 
     // Formats a distance in meters using the configured display unit.

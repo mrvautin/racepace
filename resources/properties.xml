@@ -24,29 +24,28 @@
         <property id="finishTimeMin" type="number">30</property>
 
         <!--
-            Field visibility toggles (Garmin Connect Mobile/Express only -
-            not exposed on-device, since the watch's own settings menu is
-            for race parameters, not layout). Hiding a field lets the
-            remaining fields grow to fill the space. If every field ends
-            up hidden, RacePaceFieldView forces Current Pace back on
-            rather than showing a blank screen.
+            Where each value shows: 0 = hidden, 1 = top row, 2 = bottom
+            row (Garmin Connect Mobile/Express only - not exposed
+            on-device, since the watch's own settings menu is for race
+            parameters, not layout). Each row holds at most 3 values;
+            extras are dropped in a fixed order and the watch shows a
+            warning (see RacePaceCalc.buildRows()). Keyed p<ITEM_* id>
+            (short to save memory on 32 KB watches). Hidden values free
+            their space for whatever's left. Defaults match the original
+            layout: Current / Average / Ahead-Behind on top, Projected
+            Finish below.
         -->
-        <property id="showCurrentPace" type="boolean">true</property>
-        <property id="showTargetPace" type="boolean">false</property>
-        <property id="showDelta" type="boolean">true</property>
-        <property id="showProjectedFinish" type="boolean">true</property>
-        <property id="showAveragePace" type="boolean">true</property>
-        <property id="showSplitPace" type="boolean">false</property>
-        <property id="showFinishDelta" type="boolean">false</property>
-
-        <!--
-            Heart rate, shown in the bottom row beside Projected Finish
-            on a background in the current HR zone's colour. Off by
-            default - opt-in.
-        -->
-        <property id="showHeartRate" type="boolean">false</property>
-        <!-- Whole-activity average heart rate, also in the bottom row. Off by default. -->
-        <property id="showAvgHeartRate" type="boolean">false</property>
+        <property id="p0" type="number">1</property> <!-- Current Pace -->
+        <property id="p1" type="number">1</property> <!-- Average Pace -->
+        <property id="p2" type="number">0</property> <!-- Km/Mi Split Pace -->
+        <property id="p3" type="number">0</property> <!-- Target Pace -->
+        <property id="p4" type="number">1</property> <!-- Ahead/Behind -->
+        <property id="p5" type="number">0</property> <!-- Finish +/- -->
+        <property id="p6" type="number">2</property> <!-- Projected Finish -->
+        <property id="p7" type="number">0</property> <!-- Distance -->
+        <property id="p8" type="number">0</property> <!-- Elapsed Time -->
+        <property id="p9" type="number">0</property> <!-- Heart Rate -->
+        <property id="p10" type="number">0</property> <!-- Average Heart Rate -->
 
         <!--
             Race progress ring around the screen edge, with a marker for

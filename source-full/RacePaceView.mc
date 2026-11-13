@@ -7,18 +7,15 @@ import Toybox.System;
 import Toybox.UserProfile;
 import Toybox.WatchUi;
 
-// Compact race data field: current pace, average pace, target pace, and
-// pace delta (color-coded ahead/behind) on top, projected finish time
-// below. No cycling/tap dependency, since data fields don't reliably
-// receive tap input - everything worth seeing mid-run is on screen
-// together.
+// Compact race data field: a top row and a bottom row of up to three
+// values each. No cycling/tap dependency, since data fields don't
+// reliably receive tap input - everything worth seeing mid-run is on
+// screen together.
 //
-// Average pace, split pace, target pace, the pace delta column, the
-// finish-time delta column, and projected finish time can each be
-// hidden via Garmin Connect Mobile/Express (showAveragePace,
-// showSplitPace, showTargetPace, showDelta, showFinishDelta,
-// showProjectedFinish) - hidden fields free their space for whatever's
-// left, rather than leaving a blank gap. Current Pace always shows.
+// Which values show, and in which row, is chosen per value in Garmin
+// Connect Mobile/Express (the pos* properties - see
+// RacePaceCalc.buildRows()). Hidden values free their space for
+// whatever's left, rather than leaving a blank gap.
 class RacePaceFieldView extends WatchUi.DataField {
 
     // Largest-to-smallest so the fit search below picks the first (i.e.
@@ -40,6 +37,18 @@ class RacePaceFieldView extends WatchUi.DataField {
     private var _projectedFinishSec as Number = 0;
     private var _finishDeltaSec as Number = 0;
     private var _splitPaceSec as Float = 0.0;
+    private var _distanceM as Float?;
+    private var _timerSec as Number?;
+
+    // Row layout (lists of RacePaceCalc.ITEM_* ids), rebuilt from the
+    // phone settings whenever they change (RacePaceCalc.settingsVersion).
+    private var _top as Array<Number> = [] as Array<Number>;
+    private var _bottom as Array<Number> = [] as Array<Number>;
+    private var _layoutVersion as Number = -1;
+    private var _finishDeltaShown as Boolean = false;
+    // Set when the settings put more than MAX_PER_ROW values in a row;
+    // the warning alert is shown from compute() and this is cleared.
+    private var _layoutWarnPending as Boolean = false;
 
     // Heart rate (bpm, null when there's no reading) and the user's HR
     // zone boundaries, loaded once on first use - zones only change in
@@ -66,6 +75,15 @@ class RacePaceFieldView extends WatchUi.DataField {
     private var _w as Float = 0.0;
     private var _h as Float = 0.0;
     private var _topBandBottom as Float = 0.0;
+    // Whether this field fills the whole round screen, so the usable
+    // width at any height follows the circle (see chordWidth()).
+    private var _isRound as Boolean = false;
+
+    // Cached two-row fit (see drawTwoRows): what it was computed for,
+    // each row's VALUE_FONTS index, and the gap either side of the divider.
+    private var _twoRowKey as String = "";
+    private var _twoRowFonts as Array<Number> = [0, 0] as Array<Number>;
+    private var _twoRowGap as Float = 0.0;
 
     private var _progressFrac as Float = 0.0;
     private var _ghostFrac as Float = 0.0;
@@ -105,8 +123,12 @@ class RacePaceFieldView extends WatchUi.DataField {
             _hrZones = loadHeartRateZones();
         }
 
+        refreshLayout();
+
         var elapsedDistanceM = info.elapsedDistance;
         var elapsedTimeSec = (info.timerTime != null) ? info.timerTime / 1000.0 : null;
+        _distanceM = elapsedDistanceM;
+        _timerSec = (info.timerTime != null) ? info.timerTime / 1000 : null;
 
         if (elapsedDistanceM != null && elapsedTimeSec != null) {
             var checkpointMeters = RacePaceCalc.getPaceSmoothingM();
@@ -169,6 +191,44 @@ class RacePaceFieldView extends WatchUi.DataField {
             _lastAlertSec = null;
             _alertFiredOnce = false;
             _alertCutoff = false;
+        }
+
+        if (_layoutWarnPending) {
+            _layoutWarnPending = false;
+            showLayoutWarning();
+        }
+    }
+
+    // Re-reads the row placement settings if they've changed since the
+    // last build. Cheap to call every frame - it only does real work
+    // after a settings change (and once on startup).
+    private function refreshLayout() as Void {
+        if (_layoutVersion == RacePaceCalc.settingsVersion) {
+            return;
+        }
+        _layoutVersion = RacePaceCalc.settingsVersion;
+        var rows = RacePaceCalc.buildRows();
+        _top = rows[0] as Array<Number>;
+        _bottom = rows[1] as Array<Number>;
+        _finishDeltaShown = (_top.indexOf(RacePaceCalc.ITEM_FINISH_DELTA) >= 0) || (_bottom.indexOf(RacePaceCalc.ITEM_FINISH_DELTA) >= 0);
+        if (rows[2] as Boolean) {
+            _layoutWarnPending = true;
+        }
+    }
+
+    // Tells the runner some values were dropped because a row had more
+    // than MAX_PER_ROW - otherwise a value they picked in Garmin Connect
+    // would just silently not appear. Shown once per settings change
+    // (and once when the field starts, if the settings are still over).
+    private function showLayoutWarning() as Void {
+        if (!(WatchUi.DataField has :showAlert)) {
+            return;
+        }
+        try {
+            WatchUi.DataField.showAlert(new RacePaceAlertView("Max 3 values\nper row", Graphics.COLOR_YELLOW));
+        } catch (e) {
+            // Another alert is already up (e.g. a pace alert) - not worth
+            // retrying; the layout itself has already been capped.
         }
     }
 
@@ -292,7 +352,8 @@ class RacePaceFieldView extends WatchUi.DataField {
         // square inside it (_ox/_oy offset, _w/_h size), so no value or
         // label ever sits under the ring.
         var ringPen = 0;
-        if (RacePaceCalc.getShowProgressRing() && fillsRoundScreen(fullW, fullH)) {
+        _isRound = fillsRoundScreen(fullW, fullH);
+        if (RacePaceCalc.getShowProgressRing() && _isRound) {
             ringPen = (fullW * 0.02).toNumber();
             if (ringPen < 4) {
                 ringPen = 4;
@@ -305,139 +366,423 @@ class RacePaceFieldView extends WatchUi.DataField {
         _w = (fullW - inset * 2).toFloat();
         _h = (fullH - inset * 2).toFloat();
 
-        var showCurrent = RacePaceCalc.getShowCurrentPace();
-        var showAverage = RacePaceCalc.getShowAveragePace();
-        var showSplit = RacePaceCalc.getShowSplitPace();
-        var showTarget = RacePaceCalc.getShowTargetPace();
-        var showDelta = RacePaceCalc.getShowDelta();
-        var showFinishDelta = RacePaceCalc.getShowFinishDelta();
-
-        // Never let the top row end up empty - the layout divides the
-        // width by the top-row column count, and a blank top half would
-        // be worse than a redundant Current Pace anyway, so it's forced
-        // back on if every other top-row field is switched off.
-        if (!showCurrent && !showAverage && !showSplit && !showTarget && !showDelta && !showFinishDelta) {
-            showCurrent = true;
-        }
-
-        // Garmin Connect Mobile's settings screen can't enforce a max
-        // selection count - every toggle is independent. More than 3
-        // top-row fields squeezes each one too small to read at a
-        // glance (the field's whole purpose), so if more than 3 are on,
-        // only the first 3 in this fixed priority order are shown; the
-        // rest are silently dropped rather than cramming everything in.
-        // Order: Current, Ahead/Behind, Average, Target, Split, Finish +/-.
-        var shows = [showCurrent, showDelta, showAverage, showTarget, showSplit, showFinishDelta] as Array<Boolean>;
-        var shownCount = 0;
-        for (var i = 0; i < shows.size(); i += 1) {
-            if (shows[i]) {
-                shownCount += 1;
-                if (shownCount > 3) {
-                    shows[i] = false;
-                }
-            }
-        }
-
-        // Reserve the bottom band only if a bottom-row field is shown;
-        // otherwise the top row gets the full height to grow into. A
-        // plain 50/50 split, regardless of column count - varying this
-        // by column count kept trading one bad case for another. The
-        // divider and the whole bottom row are positioned from this same
-        // value so they always agree with where the top band ends.
-        var showFinish = RacePaceCalc.getShowProjectedFinish();
-        var showHeartRate = RacePaceCalc.getShowHeartRate();
-        var showAvgHeartRate = RacePaceCalc.getShowAvgHeartRate();
-        var showBottom = showFinish || showHeartRate || showAvgHeartRate;
-        _topBandBottom = _oy + (showBottom ? (_h * 0.50) : _h);
+        refreshLayout();
 
         // Drawing is split into separate functions because Monkey C
         // data fields get a small stack: one big function holding every
         // local overflowed as soon as it called a helper.
-        drawTopRow(dc, shows);
-        if (showBottom) {
-            drawBottomRow(dc, showFinish, showHeartRate, showAvgHeartRate, shows[5]);
+        if (_bottom.size() > 0) {
+            drawTwoRows(dc);
+        } else {
+            // A single row gets the whole field to grow into.
+            _topBandBottom = _oy + _h;
+            drawTopRow(dc);
         }
     }
 
-    // Top row: up to three pace columns. `shows` is the capped
-    // visibility list from onUpdate (Current, Ahead/Behind, Average,
-    // Target, Split, Finish +/-).
-    private function drawTopRow(dc as Dc, shows as Array<Boolean>) as Void {
+    // Two rows, mirrored around a centre divider: each row's values sit
+    // right next to the divider, where a round screen is widest, and
+    // their labels go on the outside (above the top row, below the
+    // bottom row), where the screen narrows but labels are small.
+    //
+    // Columns are sized to their contents rather than split evenly
+    // (a "24:13" needs far more room than a "162"), and checked against
+    // the real width of the circle at the height they're drawn, so
+    // nothing runs off the edge. With the same number of values in each
+    // row, both rows use the same font. Once the font is settled, the
+    // rows are spread apart as far as that font still fits, to use the
+    // height rather than huddle around the divider.
+    private function drawTwoRows(dc as Dc) as Void {
+        var top = buildCells(_top);
+        var bottom = buildCells(_bottom);
+        var maxCols = (top.size() > bottom.size()) ? top.size() : bottom.size();
+        var labelFont = (maxCols <= 2) ? Graphics.FONT_TINY : Graphics.FONT_XTINY;
+
+        // Font and spacing only change when the shape of what's shown
+        // does (templates, arrows), so they're cached between frames
+        // instead of re-measuring everything every second.
+        var key = cellsKey(top) + "|" + cellsKey(bottom) + "|" + _w;
+        if (!key.equals(_twoRowKey)) {
+            _twoRowKey = key;
+            fitTwoRows(dc, top, bottom, labelFont);
+        }
+
+        var cy = _oy + _h / 2.0;
+        var divH = (dc.getWidth() * 0.008).toNumber();
+        if (divH < 2) {
+            divH = 2;
+        }
+        dc.setColor(_labelColor, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(_ox + _w * 0.22, cy - divH / 2, _w * 0.56, divH, divH / 2);
+
+        drawHalfRow(dc, top, VALUE_FONTS[_twoRowFonts[0]], labelFont, -1);
+        drawHalfRow(dc, bottom, VALUE_FONTS[_twoRowFonts[1]], labelFont, 1);
+    }
+
+    // Picks each row's font (largest that fits; the smaller of the two
+    // when both rows have the same column count) and then the widest
+    // divider gap both rows still fit at. Results go in _twoRowFonts
+    // and _twoRowGap.
+    private function fitTwoRows(dc as Dc, top as Array<Array>, bottom as Array<Array>, labelFont as Graphics.FontType) as Void {
+        var minGap = _h * 0.025;
+        var topFont = fitHalfRowFont(dc, top, labelFont, minGap);
+        var bottomFont = fitHalfRowFont(dc, bottom, labelFont, minGap);
+        if (top.size() == bottom.size()) {
+            // VALUE_FONTS is largest-first: the larger index is the
+            // smaller font.
+            if (bottomFont > topFont) {
+                topFont = bottomFont;
+            } else {
+                bottomFont = topFont;
+            }
+        }
+        _twoRowFonts = [topFont, bottomFont] as Array<Number>;
+
+        var gap = minGap;
+        var maxGap = _h * 0.10;
+        var step = 2.0;
+        while (gap + step <= maxGap
+                && halfRowLayout(dc, top, VALUE_FONTS[topFont], labelFont, gap + step) != null
+                && halfRowLayout(dc, bottom, VALUE_FONTS[bottomFont], labelFont, gap + step) != null) {
+            gap += step;
+        }
+        _twoRowGap = gap;
+    }
+
+    // Index into VALUE_FONTS of the largest font a half-row fits at.
+    private function fitHalfRowFont(dc as Dc, cells as Array<Array>, labelFont as Graphics.FontType, gap as Float) as Number {
+        var last = VALUE_FONTS.size() - 1;
+        for (var f = 0; f < last; f += 1) {
+            if (halfRowLayout(dc, cells, VALUE_FONTS[f], labelFont, gap) != null) {
+                return f;
+            }
+        }
+        return last;
+    }
+
+    // Lays out one half-row at a value font and divider gap, or returns
+    // null if it doesn't fit. Distances are from the screen centre:
+    // [column x offsets, value centre y, label centre y, label half-width
+    // available].
+    private function halfRowLayout(dc as Dc, cells as Array<Array>, font as Graphics.FontType, labelFont as Graphics.FontType, gap as Float) as Array? {
+        var n = cells.size();
+        var widths = new [n] as Array<Float>;
+        var rowH = 0.0;
+        var sum = 0.0;
+        for (var c = 0; c < n; c += 1) {
+            widths[c] = cellWidth(dc, cells[c], font);
+            sum += widths[c];
+            var ch = cellHeight(cells[c], font);
+            if (ch > rowH) {
+                rowH = ch;
+            }
+        }
+        var valueY = gap + rowH / 2.0;
+        // The outer columns' far corners are what touch the bezel, so
+        // the usable width is the circle's width at those corners.
+        var usable = chordWidth(valueY + cellHeight(cells[0], font) / 2.0);
+        var lastUsable = chordWidth(valueY + cellHeight(cells[n - 1], font) / 2.0);
+        if (lastUsable < usable) {
+            usable = lastUsable;
+        }
+        var colGap = _w * 0.035;
+        var slack = usable - sum - (n - 1) * colGap;
+        if (slack < 0) {
+            return null;
+        }
+
+        var labelH = Graphics.getFontAscent(labelFont) * 0.8;
+        var labelY = gap + rowH + gap * 0.6 + labelH / 2.0;
+        var labelEdge = labelY + labelH / 2.0;
+        if (labelEdge > _h / 2.0 * 0.99) {
+            return null;
+        }
+        var labelHalf = chordWidth(labelEdge) / 2.0;
+
+        // Spare width is shared evenly between the edges and the gaps.
+        var spare = slack / (n + 1);
+        var xs = new [n] as Array<Float>;
+        var x = -usable / 2.0 + spare;
+        var labelsW = 0.0;
+        for (var c = 0; c < n; c += 1) {
+            xs[c] = x + widths[c] / 2.0;
+            x += widths[c] + colGap + spare;
+            labelsW += labelWidth(dc, cells[c], labelFont) + 4;
+        }
+        if (labelsW > labelHalf * 2.0) {
+            return null;
+        }
+        return [xs, valueY, labelY, labelHalf];
+    }
+
+    // Draws one half of a two-row layout: dir -1 = top (labels above
+    // values), 1 = bottom (labels below values).
+    private function drawHalfRow(dc as Dc, cells as Array<Array>, font as Graphics.FontType, labelFont as Graphics.FontType, dir as Number) as Void {
+        var layout = halfRowLayout(dc, cells, font, labelFont, _twoRowGap);
+        if (layout == null) {
+            // Smallest font still didn't fit (very small field): fall
+            // back to a minimal gap rather than drawing nothing.
+            layout = halfRowLayout(dc, cells, font, labelFont, _h * 0.01);
+            if (layout == null) {
+                return;
+            }
+        }
+        var xs = layout[0] as Array<Float>;
+        var cx = _ox + _w / 2.0;
+        var cy = _oy + _h / 2.0;
+        var labelHalf = layout[3] as Float;
+        var box = valueBoxSize(dc, font, "888");
+        for (var c = 0; c < cells.size(); c += 1) {
+            // Labels sit over/under their value, nudged inwards if
+            // they'd otherwise cross the screen edge.
+            var x = xs[c];
+            var half = labelWidth(dc, cells[c], labelFont) / 2.0;
+            var lx = x;
+            if (lx - half < -labelHalf) {
+                lx = -labelHalf + half;
+            } else if (lx + half > labelHalf) {
+                lx = labelHalf - half;
+            }
+            drawLabel(dc, cx + lx, cy + dir * (layout[2] as Float), labelFont, cells[c][0] as String, cells[c][3] as Number, cells[c][2] as Number);
+            drawValue(dc, cells[c], cx + x, cy + dir * (layout[1] as Float), font, box);
+        }
+    }
+
+    // Short string describing what a row's layout depends on, for the
+    // two-row cache.
+    private function cellsKey(cells as Array<Array>) as String {
+        var k = "";
+        for (var c = 0; c < cells.size(); c += 1) {
+            k += (cells[c][0] as String) + (cells[c][5] as String) + (((cells[c][3] as Number) != 0) ? "^" : "") + ",";
+        }
+        return k;
+    }
+
+    // Width a value takes at a font: its template (which already has
+    // room for a highlight box), or the heart rate zone box if wider.
+    private function cellWidth(dc as Dc, cell as Array, font as Graphics.FontType) as Float {
+        var w = dc.getTextDimensions(cell[5] as String, font)[0].toFloat();
+        if (isHeartRate(cell)) {
+            var boxW = valueBoxSize(dc, font, "888")[0].toFloat();
+            if (boxW > w) {
+                w = boxW;
+            }
+        }
+        return w;
+    }
+
+    // Visible height of a value at a font: its box where it can have
+    // one, otherwise just the digits.
+    private function cellHeight(cell as Array, font as Graphics.FontType) as Float {
+        if (isHeartRate(cell) || (cell[6] as Boolean)) {
+            return boxHeight(font);
+        }
+        return digitHeight(font);
+    }
+
+    private function isHeartRate(cell as Array) as Boolean {
+        var item = cell[7] as Number;
+        return item == RacePaceCalc.ITEM_HEART_RATE || item == RacePaceCalc.ITEM_AVG_HEART_RATE;
+    }
+
+    // Garmin fonts' ascent includes empty space above the glyphs; the
+    // digits themselves are about 80% of it.
+    private function digitHeight(font as Graphics.FontType) as Float {
+        return Graphics.getFontAscent(font) * 0.8;
+    }
+
+    // Usable width at a given distance from the centre line: the circle
+    // chord on a full round screen (slightly inset from the edge),
+    // otherwise most of the field's width.
+    private function chordWidth(offset as Float) as Float {
+        if (!_isRound) {
+            return _w * 0.94;
+        }
+        var r = _w / 2.0 * 0.97;
+        if (offset >= r) {
+            return 0.0;
+        }
+        return 2.0 * Math.sqrt(r * r - offset * offset).toFloat();
+    }
+
+    // Width of a cell's label including its ahead/behind arrow.
+    private function labelWidth(dc as Dc, cell as Array, font as Graphics.FontType) as Float {
+        var tw = dc.getTextDimensions(cell[0] as String, font)[0].toFloat();
+        if ((cell[3] as Number) != 0) {
+            tw += Graphics.getFontAscent(font) * 0.6 * 1.45;
+        }
+        return tw;
+    }
+
+    // Everything needed to draw one value, as
+    // [label, value, color, dir, hr, template, boxable, item]:
+    //   dir      1 = ahead (up arrow), -1 = behind (down arrow), 0 = none
+    //   hr       heart rate for the zone-colour box, or null
+    //   template value with every digit as "8", for steady font fitting
+    //   boxable  true when it gets the green/red Highlight box (drawn
+    //            only while ahead/behind, i.e. dir != 0)
+    // `alone` is true when it's the only value in its row (gets a longer
+    // label where one exists).
+    private function buildCell(item as Number, alone as Boolean) as Array {
+        var label = RacePaceCalc.itemLabel(item);
+        var value = "--";
+        var color = _fgColor;
+        var dir = 0;
+        var hr = null;
+        var boxed = false;
+
+        if (item == RacePaceCalc.ITEM_CURRENT) {
+            value = RacePaceCalc.formatPace(_currentPaceSec);
+        } else if (item == RacePaceCalc.ITEM_AVERAGE) {
+            value = RacePaceCalc.formatPace(_averagePaceSec);
+        } else if (item == RacePaceCalc.ITEM_SPLIT) {
+            value = RacePaceCalc.formatPace(_splitPaceSec);
+        } else if (item == RacePaceCalc.ITEM_TARGET) {
+            value = RacePaceCalc.formatPace(_targetPaceSec);
+        } else if (item == RacePaceCalc.ITEM_DELTA) {
+            value = RacePaceCalc.formatPaceDelta(_deltaSec);
+            dir = directionOf(_deltaSec.toNumber());
+            boxed = RacePaceCalc.getHighlightDelta();
+        } else if (item == RacePaceCalc.ITEM_FINISH_DELTA) {
+            value = RacePaceCalc.formatFinishDelta(_finishDeltaSec);
+            dir = directionOf(_finishDeltaSec);
+            boxed = RacePaceCalc.getHighlightDelta();
+        } else if (item == RacePaceCalc.ITEM_FINISH) {
+            value = RacePaceCalc.formatDuration(_projectedFinishSec);
+            if (alone) {
+                label = "PROJ. FINISH";
+            }
+            // With Finish +/- hidden, colour the projected finish (and
+            // give it an arrow) so it still shows whether you're on track.
+            if (!_finishDeltaShown) {
+                dir = directionOf(_finishDeltaSec);
+            }
+        } else if (item == RacePaceCalc.ITEM_DISTANCE) {
+            value = RacePaceCalc.formatDistanceValue(_distanceM);
+            if (alone) {
+                label = "DISTANCE";
+            }
+        } else if (item == RacePaceCalc.ITEM_ELAPSED) {
+            var t = _timerSec;
+            value = (t == null) ? "--:--" : ((t > 0) ? RacePaceCalc.formatDuration(t) : "0:00");
+            if (alone) {
+                label = "ELAPSED";
+            }
+        } else if (item == RacePaceCalc.ITEM_HEART_RATE) {
+            hr = _heartRate;
+            value = formatHeartRate(hr);
+        } else {
+            hr = _avgHeartRate;
+            value = formatHeartRate(hr);
+        }
+
+        if (dir != 0) {
+            color = (dir > 0) ? _aheadColor : _behindColor;
+        }
+        var template = widestDigits(value);
+        if (item == RacePaceCalc.ITEM_DISTANCE && template.length() < 5) {
+            // Keep the font steady as distance passes 10 km/mi.
+            template = "88.88";
+        }
+        if (boxed) {
+            // Box padding: one extra digit's width. Added whether or not
+            // the box is currently drawn, so the font doesn't change the
+            // moment you go from exactly on pace to ahead/behind.
+            template += "8";
+        }
+        return [label, value, color, dir, hr, template, boxed, item];
+    }
+
+    private function buildCells(items as Array<Number>) as Array<Array> {
+        var cells = [] as Array<Array>;
+        for (var i = 0; i < items.size(); i += 1) {
+            cells.add(buildCell(items[i], items.size() == 1));
+        }
+        return cells;
+    }
+
+    // True if any cell is a heart rate value - checked by item rather
+    // than live reading, so the zone box's space is reserved even before
+    // the first reading lands and the font doesn't shrink when it does.
+    private function hasHeartRate(cells as Array<Array>) as Boolean {
+        for (var i = 0; i < cells.size(); i += 1) {
+            if (isHeartRate(cells[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Largest value font where every cell's template (and, if the row
+    // has heart rate, its zone-colour box) fits maxW x maxH. All cells
+    // in a row share one font so the row reads as a set, and it's fitted
+    // to fixed widest-case templates rather than the live values, so it
+    // doesn't flip size as digits change.
+    private function fitRowFont(dc as Dc, cells as Array<Array>, maxW as Float, maxH as Float) as Graphics.FontType {
+        var withHr = hasHeartRate(cells);
+        for (var f = 0; f < VALUE_FONTS.size(); f += 1) {
+            var font = VALUE_FONTS[f];
+            var fits = true;
+            for (var c = 0; c < cells.size(); c += 1) {
+                var dims = dc.getTextDimensions(cells[c][5] as String, font);
+                if (dims[0] > maxW || dims[1] > maxH) {
+                    fits = false;
+                    break;
+                }
+            }
+            if (fits && withHr) {
+                var box = valueBoxSize(dc, font, "888");
+                fits = (box[0] <= maxW * 0.92) && (box[1] <= maxH);
+            }
+            if (fits) {
+                return font;
+            }
+        }
+        return Graphics.FONT_XTINY;
+    }
+
+    // Draws one cell: label (with arrow), then the value.
+    private function drawCell(dc as Dc, cell as Array, cx as Numeric, labelY as Numeric, valueY as Numeric, labelFont as Graphics.FontType, valueFont as Graphics.FontType, hrBox as Array<Numeric>) as Void {
+        drawLabel(dc, cx, labelY, labelFont, cell[0] as String, cell[3] as Number, cell[2] as Number);
+        drawValue(dc, cell, cx, valueY, valueFont, hrBox);
+    }
+
+    // Draws a value, on its highlight box or heart rate zone box where
+    // it has one.
+    private function drawValue(dc as Dc, cell as Array, cx as Numeric, valueY as Numeric, valueFont as Graphics.FontType, hrBox as Array<Numeric>) as Void {
+        var value = cell[1] as String;
+        var color = cell[2] as Number;
+        var dir = cell[3] as Number;
+        if ((cell[6] as Boolean) && dir != 0) {
+            color = drawDeltaBox(dc, cx, valueY, valueFont, value, dir, color);
+        } else {
+            var hr = cell[4] as Number?;
+            var zone = (hr != null) ? RacePaceCalc.heartRateZone(hr, _hrZones) : 0;
+            if (zone > 0) {
+                // Zone-colour background behind the value. Fixed size
+                // per font, so HR and AVG HR boxes match and don't
+                // resize as the number changes.
+                var zoneColor = RacePaceCalc.heartRateZoneColor(zone);
+                var boxW = hrBox[0];
+                var boxH = hrBox[1];
+                dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
+                dc.fillRoundedRectangle(cx - boxW / 2, valueY - boxH / 2, boxW, boxH, boxH * 0.30);
+                color = RacePaceCalc.contrastTextColor(zoneColor);
+            }
+        }
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(cx, valueY, valueFont, value, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+    }
+
+    // Single row (nothing placed in the bottom row): up to three
+    // columns filling the whole field.
+    private function drawTopRow(dc as Dc) as Void {
         var ox = _ox;
         var oy = _oy;
         var w = _w;
         var h = _h;
-        var fgColor = _fgColor;
-        var labelColor = _labelColor;
-        var aheadColor = _aheadColor;
-        var behindColor = _behindColor;
-        var showCurrent = shows[0];
-        var showDelta = shows[1];
-        var showAverage = shows[2];
-        var showTarget = shows[3];
-        var showSplit = shows[4];
-        var showFinishDelta = shows[5];
-
-        var topLabels = [] as Array<String>;
-        var topValues = [] as Array<String>;
-        var topColors = [] as Array<Number>;
-        // Per column: 1 = ahead (up arrow), -1 = behind (down arrow),
-        // 0 = no direction. Drawn beside the label so direction doesn't
-        // rely on red/green alone.
-        var topDirs = [] as Array<Number>;
-        var highlight = RacePaceCalc.getHighlightDelta();
-
-        if (showCurrent) {
-            topLabels.add("CUR");
-            topValues.add(RacePaceCalc.formatPace(_currentPaceSec));
-            topColors.add(fgColor);
-            topDirs.add(0);
-        }
-
-        if (showAverage) {
-            topLabels.add("AVG");
-            topValues.add(RacePaceCalc.formatPace(_averagePaceSec));
-            topColors.add(fgColor);
-            topDirs.add(0);
-        }
-
-        if (showSplit) {
-            topLabels.add(RacePaceCalc.unitLabel().toUpper());
-            topValues.add(RacePaceCalc.formatPace(_splitPaceSec));
-            topColors.add(fgColor);
-            topDirs.add(0);
-        }
-
-        if (showTarget) {
-            topLabels.add("TGT");
-            topValues.add(RacePaceCalc.formatPace(_targetPaceSec));
-            topColors.add(fgColor);
-            topDirs.add(0);
-        }
-
-        if (showDelta) {
-            var deltaColor = fgColor;
-            if (_deltaSec != 0.0) {
-                deltaColor = (_deltaSec > 0) ? behindColor : aheadColor;
-            }
-            topLabels.add("+/-");
-            topValues.add(RacePaceCalc.formatPaceDelta(_deltaSec));
-            topColors.add(deltaColor);
-            topDirs.add(directionOf(_deltaSec.toNumber()));
-        }
-
-        if (showFinishDelta) {
-            var finishDeltaColor = fgColor;
-            if (_finishDeltaSec != 0) {
-                finishDeltaColor = (_finishDeltaSec > 0) ? behindColor : aheadColor;
-            }
-            topLabels.add("FIN+/-");
-            topValues.add(RacePaceCalc.formatFinishDelta(_finishDeltaSec));
-            topColors.add(finishDeltaColor);
-            topDirs.add(directionOf(_finishDeltaSec));
-        }
-
-        var colCount = topLabels.size();
+        var cells = buildCells(_top);
+        var colCount = cells.size();
 
         var topBandBottom = _topBandBottom;
         // The top margin exists so a row's outer labels (near col1/
@@ -451,56 +796,35 @@ class RacePaceFieldView extends WatchUi.DataField {
         var bandHeight = topBandBottom - topBandTop;
 
         // With only 1-2 columns shown, width stops being the binding
-        // constraint on font size well before height does (a single
-        // "3:49" comfortably fits a half-screen-wide column at every
-        // font size in the ladder), so fewer columns get a taller
-        // height budget to grow the font into.
+        // constraint on font size well before height does, so fewer
+        // columns get a taller height budget to grow the font into.
         var colWidth = w / colCount;
         // 3-column centers are spaced 0.30*w apart (20/50/80), tighter
         // than the even 0.333*w split colWidth implies - measure the
-        // real gap so fitFont doesn't pick a font wider than the actual
-        // spacing allows.
+        // real gap so the font fit doesn't pick a font wider than the
+        // actual spacing allows.
         var colSpacing = (colCount == 3) ? (w * 0.30) : colWidth;
-        var valueMaxWidth = colSpacing * 0.90;
         var valueHeightFrac = (colCount == 1) ? 0.62 : ((colCount == 2) ? 0.54 : 0.44);
-        var valueMaxHeight = bandHeight * valueHeightFrac;
+        var topValueFont = fitRowFont(dc, cells, colSpacing * 0.90, bandHeight * valueHeightFrac);
+        var hrBox = valueBoxSize(dc, topValueFont, "888");
 
         var tinyLabelFont = (colCount <= 2) ? Graphics.FONT_TINY : Graphics.FONT_XTINY;
-        // Fitted to fixed templates (every digit as 8) rather than the
-        // live values, so the font doesn't flip size as digits change.
-        // Boxed columns get an extra digit's width for the box padding.
-        var topTemplates = [] as Array<String>;
-        for (var t = 0; t < colCount; t += 1) {
-            var tpl = widestDigits(topValues[t]);
-            if (highlight && topDirs[t] != 0) {
-                tpl += "8";
-            }
-            topTemplates.add(tpl);
-        }
-        var topValueFont = fitFont(dc, topTemplates, valueMaxWidth, valueMaxHeight, VALUE_FONTS);
-
         // Label sits near the top of the band; the value is vertically
         // centered in whatever's left underneath it, sized from the
         // font that was actually picked - not a fixed fraction of the
-        // band assumed before the font (and therefore its real glyph
-        // height) was known. That fixed-fraction approach is what let a
-        // single big value get positioned low enough to run past
-        // topBandBottom and behind the divider/PROJ. FINISH row.
+        // band, which let a single big value run past topBandBottom.
         var labelFontHeight = dc.getTextDimensions("A", tinyLabelFont)[1];
         var labelTop = topBandTop + bandHeight * 0.06;
         var labelH = labelTop + labelFontHeight / 2.0;
 
         var valueTop = labelTop + labelFontHeight + bandHeight * 0.04;
-        var valueAreaHeight = topBandBottom - valueTop;
-        var valueH = valueTop + valueAreaHeight / 2.0;
+        var valueH = valueTop + (topBandBottom - valueTop) / 2.0;
 
         for (var i = 0; i < colCount; i += 1) {
             // A round screen's usable width narrows near the top edge -
-            // an even 1/6, 3/6, 5/6 split (colWidth * (i + 0.5)) puts
-            // col1/col3 far enough into the curve at this height to
-            // clip under the bezel. With exactly 3 columns, pull the
-            // outer two in from the true edges instead of splitting the
-            // width evenly; the middle column stays dead center.
+            // with exactly 3 columns, pull the outer two in from the true
+            // edges instead of splitting the width evenly; the middle
+            // column stays dead center.
             var colCenter = ox + colWidth * (i + 0.5);
             if (colCount == 3) {
                 if (i == 0) {
@@ -509,153 +833,7 @@ class RacePaceFieldView extends WatchUi.DataField {
                     colCenter = ox + w * 0.80;
                 }
             }
-            drawLabel(dc, colCenter, labelH, tinyLabelFont, topLabels[i], topDirs[i], topColors[i]);
-
-            var valueColor = topColors[i];
-            if (highlight && topDirs[i] != 0) {
-                valueColor = drawDeltaBox(dc, colCenter, valueH, topValueFont, topValues[i], topDirs[i], valueColor);
-            }
-            dc.setColor(valueColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(colCenter, valueH, topValueFont, topValues[i], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
-    }
-
-    // Divider plus bottom row: up to three columns - Projected Finish,
-    // Heart Rate and Average Heart Rate.
-    private function drawBottomRow(dc as Dc, showFinish as Boolean, showHeartRate as Boolean, showAvgHeartRate as Boolean, showFinishDelta as Boolean) as Void {
-        var ox = _ox;
-        var oy = _oy;
-        var w = _w;
-        var h = _h;
-        var fgColor = _fgColor;
-        var aheadColor = _aheadColor;
-        var behindColor = _behindColor;
-
-        // Short, rounded divider in the label colour - separates the rows
-        // without competing with the values.
-        var divH = (dc.getWidth() * 0.008).toNumber();
-        if (divH < 2) {
-            divH = 2;
-        }
-        dc.setColor(_labelColor, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(ox + w * 0.22, _topBandBottom - divH / 2, w * 0.56, divH, divH / 2);
-
-        // Bottom row: up to three columns - Projected Finish, Heart
-        // Rate and Average Heart Rate, in that order. Positioned as
-        // fractions of the space actually left below topBandBottom (not
-        // of h), so this row stays correctly placed under the divider
-        // wherever that divider ends up. Multiple columns are pulled in
-        // from the edges, since the round screen narrows towards the
-        // bottom.
-        var bottomLabels = [] as Array<String>;
-        var bottomValues = [] as Array<String>;
-        var bottomTemplates = [] as Array<String>;
-        // Heart rate value per column (null for Projected Finish), used
-        // to pick that column's zone-colour background.
-        var bottomHr = [] as Array<Number?>;
-        var bottomColors = [] as Array<Number>;
-        var bottomDirs = [] as Array<Number>;
-
-        if (showFinish) {
-            var finishValue = RacePaceCalc.formatDuration(_projectedFinishSec);
-            bottomLabels.add("FINISH");
-            bottomValues.add(finishValue);
-            bottomTemplates.add(widestDigits(finishValue));
-            bottomHr.add(null);
-            // With Finish +/- hidden, colour the projected finish (and
-            // give it an arrow) so it still shows whether you're on track.
-            var finishColor = fgColor;
-            var finishDir = 0;
-            if (!showFinishDelta && _finishDeltaSec != 0) {
-                finishDir = directionOf(_finishDeltaSec);
-                finishColor = (finishDir > 0) ? aheadColor : behindColor;
-            }
-            bottomColors.add(finishColor);
-            bottomDirs.add(finishDir);
-        }
-        if (showHeartRate) {
-            bottomLabels.add("HR");
-            bottomValues.add(formatHeartRate(_heartRate));
-            bottomHr.add(_heartRate);
-            bottomColors.add(fgColor);
-            bottomDirs.add(0);
-        }
-        if (showAvgHeartRate) {
-            bottomLabels.add("AVG HR");
-            bottomValues.add(formatHeartRate(_avgHeartRate));
-            bottomHr.add(_avgHeartRate);
-            bottomColors.add(fgColor);
-            bottomDirs.add(0);
-        }
-
-        var bottomCount = bottomValues.size();
-        if (bottomCount == 1 && showFinish) {
-            bottomLabels[0] = "PROJ. FINISH";
-        }
-
-        var topBandBottom = _topBandBottom;
-        var bottomBandHeight = (oy + h) - topBandBottom;
-        var bottomLabelH = topBandBottom + bottomBandHeight * 0.24;
-        var bottomValueH = topBandBottom + bottomBandHeight * ((bottomCount == 1) ? 0.64 : 0.62);
-        var bottomCenters = [0.50] as Array<Float>;
-        var bottomColWidth = w * 0.85;
-        if (bottomCount == 2) {
-            bottomCenters = [0.32, 0.68] as Array<Float>;
-            bottomColWidth = w * 0.36;
-        } else if (bottomCount == 3) {
-            bottomCenters = [0.23, 0.50, 0.77] as Array<Float>;
-            bottomColWidth = w * 0.25;
-        }
-
-        // All columns share one font so the row reads as a set. The font
-        // is fitted to fixed widest-case templates, not the live values:
-        // digits differ in width, so fitting the live numbers made the
-        // font flip size every few seconds. Heart rate columns must also
-        // fit their zone-colour box (see hrBoxSize).
-        var bottomMaxH = bottomBandHeight * ((bottomCount == 1) ? 0.56 : 0.50);
-        var hasHr = showHeartRate || showAvgHeartRate;
-        var bottomFont = Graphics.FONT_XTINY;
-        for (var f = 0; f < VALUE_FONTS.size(); f += 1) {
-            var font = VALUE_FONTS[f];
-            var fits = true;
-            for (var t = 0; t < bottomTemplates.size(); t += 1) {
-                var dims = dc.getTextDimensions(bottomTemplates[t], font);
-                if (dims[0] > bottomColWidth || dims[1] > bottomMaxH) {
-                    fits = false;
-                    break;
-                }
-            }
-            if (fits && hasHr) {
-                var box = hrBoxSize(dc, font);
-                fits = (box[0] <= bottomColWidth * 0.92) && (box[1] <= bottomMaxH);
-            }
-            if (fits) {
-                bottomFont = font;
-                break;
-            }
-        }
-        var hrBox = hasHr ? hrBoxSize(dc, bottomFont) : [0, 0];
-
-        for (var b = 0; b < bottomCount; b += 1) {
-            var cx = ox + w * bottomCenters[b];
-            drawLabel(dc, cx, bottomLabelH, Graphics.FONT_XTINY, bottomLabels[b], bottomDirs[b], bottomColors[b]);
-
-            var textColor = bottomColors[b];
-            var hr = bottomHr[b];
-            var zone = (hr != null) ? RacePaceCalc.heartRateZone(hr, _hrZones) : 0;
-            if (zone > 0) {
-                // Zone-colour background behind the value. Fixed size
-                // per font, so HR and AVG HR boxes match and don't
-                // resize as the number changes.
-                var zoneColor = RacePaceCalc.heartRateZoneColor(zone);
-                var boxW = hrBox[0];
-                var boxH = hrBox[1];
-                dc.setColor(zoneColor, Graphics.COLOR_TRANSPARENT);
-                dc.fillRoundedRectangle(cx - boxW / 2, bottomValueH - boxH / 2, boxW, boxH, boxH * 0.30);
-                textColor = RacePaceCalc.contrastTextColor(zoneColor);
-            }
-            dc.setColor(textColor, Graphics.COLOR_TRANSPARENT);
-            dc.drawText(cx, bottomValueH, bottomFont, bottomValues[b], Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            drawCell(dc, cells[i], colCenter, labelH, valueH, tinyLabelFont, topValueFont, hrBox);
         }
     }
 
@@ -747,47 +925,37 @@ class RacePaceFieldView extends WatchUi.DataField {
         dc.fillPolygon(pts as Array<Graphics.Point2D>);
     }
 
-    // Filled green (ahead) / red (behind) box behind a top-row value,
-    // same shape as the HR boxes. Palette-safe colours so it looks right
-    // on MIP screens. Returns the text colour to draw the value in.
+    // Filled green (ahead) / red (behind) box behind a value, same
+    // shape as the HR boxes. Palette-safe colours so it looks right on
+    // MIP screens. Returns the text colour to draw the value in.
     private function drawDeltaBox(dc as Dc, cx as Numeric, cy as Numeric, font as Graphics.FontType, value as String, dir as Number, textColor as Number) as Number {
         var boxColor = (dir > 0) ? 0x00AA00 : 0xFF0000;
-        var ascent = Graphics.getFontAscent(font);
-        var padX = ascent * 0.25;
-        if (padX < 6) {
-            padX = 6;
-        }
-        var padY = ascent * 0.12;
-        if (padY < 3) {
-            padY = 3;
-        }
-        var boxW = dc.getTextDimensions(widestDigits(value), font)[0] + padX * 2;
-        var boxH = ascent + padY * 2;
+        var box = valueBoxSize(dc, font, widestDigits(value));
+        var boxW = box[0];
+        var boxH = box[1];
         dc.setColor(boxColor, Graphics.COLOR_TRANSPARENT);
-        dc.fillRoundedRectangle(cx - boxW / 2, cy - boxH / 2, boxW, boxH, boxH * 0.25);
+        dc.fillRoundedRectangle(cx - boxW / 2, cy - boxH / 2, boxW, boxH, boxH * 0.30);
         return RacePaceCalc.contrastTextColor(boxColor);
     }
 
-
-
-
-
-    // Width and height of the heart rate zone-colour box for a font:
-    // room for three digits plus padding. The padding scales with the
-    // font but never drops below a few pixels, so small fonts (e.g.
-    // three bottom columns) don't end up with digits touching the edge.
-    private function hrBoxSize(dc as Dc, font as Graphics.FontType) as Array<Numeric> {
-        var ascent = Graphics.getFontAscent(font);
-        var textW = dc.getTextDimensions("888", font)[0];
-        var padX = ascent * 0.35;
-        if (padX < 8) {
-            padX = 8;
+    // Width and height of a coloured box (HR zone or highlight) around
+    // `text` at a font: snug padding around the visible digits, scaling
+    // with the font but never below a few pixels, so small fonts don't
+    // end up with digits touching the edge.
+    private function valueBoxSize(dc as Dc, font as Graphics.FontType, text as String) as Array<Numeric> {
+        var padX = Graphics.getFontAscent(font) * 0.2;
+        if (padX < 5) {
+            padX = 5;
         }
-        var padY = ascent * 0.15;
+        return [dc.getTextDimensions(text, font)[0] + padX * 2, boxHeight(font)];
+    }
+
+    private function boxHeight(font as Graphics.FontType) as Float {
+        var padY = Graphics.getFontAscent(font) * 0.18;
         if (padY < 4) {
             padY = 4;
         }
-        return [textW + padX * 2, ascent + padY * 2];
+        return digitHeight(font) + padY * 2;
     }
 
     private function formatHeartRate(hr as Number?) as String {
@@ -805,27 +973,5 @@ class RacePaceFieldView extends WatchUi.DataField {
             out += (c >= '0' && c <= '9') ? "8" : c.toString();
         }
         return out;
-    }
-
-    // Picks the largest font in `fonts` under which every string in
-    // `values` still fits within (maxWidth, maxHeight), so fewer visible
-    // fields (or a wider field/bigger watch) render with bigger text
-    // instead of the layout leaving space unused.
-    private function fitFont(dc as Dc, values as Array<String>, maxWidth as Float, maxHeight as Float, fonts as Array<Graphics.FontType>) as Graphics.FontType {
-        for (var i = 0; i < fonts.size(); i += 1) {
-            var font = fonts[i];
-            var fits = true;
-            for (var j = 0; j < values.size(); j += 1) {
-                var dims = dc.getTextDimensions(values[j], font);
-                if (dims[0] > maxWidth || dims[1] > maxHeight) {
-                    fits = false;
-                    break;
-                }
-            }
-            if (fits) {
-                return font;
-            }
-        }
-        return Graphics.FONT_XTINY;
     }
 }

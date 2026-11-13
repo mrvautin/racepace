@@ -23,40 +23,97 @@
             <settingConfig type="numeric" />
         </setting>
 
-        <setting propertyKey="@Properties.showCurrentPace" title="@Strings.showCurrentTitle">
-            <settingConfig type="boolean" />
+        <!--
+            Placement dropdowns: hidden / top row / bottom row per value.
+            Max 3 per row - enforced on the watch, since these settings
+            screens can't validate across fields.
+        -->
+        <setting propertyKey="@Properties.p0" title="@Strings.posCurrentTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showTargetPace" title="@Strings.showTargetTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p1" title="@Strings.posAverageTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showDelta" title="@Strings.showDeltaTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p2" title="@Strings.posSplitTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showProjectedFinish" title="@Strings.showFinishTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p3" title="@Strings.posTargetTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showAveragePace" title="@Strings.showAverageTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p4" title="@Strings.posDeltaTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showSplitPace" title="@Strings.showSplitTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p5" title="@Strings.posFinishDeltaTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showFinishDelta" title="@Strings.showFinishDeltaTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p6" title="@Strings.posFinishTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showHeartRate" title="@Strings.showHeartRateTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p7" title="@Strings.posDistanceTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
-        <setting propertyKey="@Properties.showAvgHeartRate" title="@Strings.showAvgHeartRateTitle">
-            <settingConfig type="boolean" />
+        <setting propertyKey="@Properties.p8" title="@Strings.posElapsedTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
+        </setting>
+
+        <setting propertyKey="@Properties.p9" title="@Strings.posHeartRateTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
+        </setting>
+
+        <setting propertyKey="@Properties.p10" title="@Strings.posAvgHeartRateTitle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.posHidden</listEntry>
+                <listEntry value="1">@Strings.posTop</listEntry>
+                <listEntry value="2">@Strings.posBottom</listEntry>
+            </settingConfig>
         </setting>
 
         <setting propertyKey="@Properties.showProgressRing" title="@Strings.showProgressRingTitle">

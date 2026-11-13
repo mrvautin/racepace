@@ -33,6 +33,8 @@ class RacePaceFieldApp extends Application.AppBase {
     // rest of the app actually uses.
     public function onSettingsChanged() as Void {
         RacePaceCalc.applyDisplayProperties();
+        // Tells the view to rebuild its top/bottom row layout.
+        RacePaceCalc.settingsVersion += 1;
         WatchUi.requestUpdate();
     }
 }
