@@ -20,6 +20,7 @@
     <string id="posTop">Top row (max 3)</string>
     <string id="posBottom">Bottom row (max 3)</string>
     <string id="showProgressRingTitle">Show Race Progress Ring (distance done vs. goal pace marker)</string>
+    <string id="showHeartRateArcTitle">Show Heart Rate Zone Arc (around the bottom of the screen)</string>
     <string id="highlightDeltaTitle">Highlight Ahead/Behind in a coloured box</string>
     <string id="paceSmoothingTitle">Pace Smoothing (distance Current Pace averages over)</string>
     <string id="smoothing50">50 m - more responsive, more GPS jitter</string>

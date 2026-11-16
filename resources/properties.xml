@@ -54,6 +54,14 @@
         -->
         <property id="showProgressRing" type="boolean">true</property>
 
+        <!--
+            Heart rate zone arc around the bottom half of the screen, with
+            a marker at your current heart rate. When on, the progress
+            ring shrinks to the top half to make room. Full round screens
+            only (not the 32 KB lite watches). On by default.
+        -->
+        <property id="showHeartRateArc" type="boolean">true</property>
+
         <!-- Ahead/Behind and Finish +/- in a filled green/red box. Off by default. -->
         <property id="highlightDelta" type="boolean">false</property>
 

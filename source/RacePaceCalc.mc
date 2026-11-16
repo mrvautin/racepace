@@ -13,6 +13,7 @@ module RacePaceCalc {
     const PROP_DISTANCE_DISPLAY = "raceDistanceDisplay";
     const PROP_FINISH_MIN = "finishTimeMin";
     const PROP_SHOW_PROGRESS_RING = "showProgressRing";
+    const PROP_SHOW_HR_ARC = "showHeartRateArc";
     const PROP_HIGHLIGHT_DELTA = "highlightDelta";
     const PROP_PACE_SMOOTHING_M = "paceSmoothingM";
     const PROP_BACKGROUND_MODE = "backgroundMode";
@@ -131,11 +132,21 @@ module RacePaceCalc {
         return [top, bottom, overflowed];
     }
 
+    (:fullOnly)
     function getShowProgressRing() as Boolean {
         var v = Properties.getValue(PROP_SHOW_PROGRESS_RING);
         return (v == null) ? true : v;
     }
 
+    // Heart rate zone arc around the bottom half of the screen (full
+    // round screens only). On by default.
+    (:fullOnly)
+    function getShowHeartRateArc() as Boolean {
+        var v = Properties.getValue(PROP_SHOW_HR_ARC);
+        return (v == null) ? true : v;
+    }
+
+    (:fullOnly)
     function getHighlightDelta() as Boolean {
         var v = Properties.getValue(PROP_HIGHLIGHT_DELTA);
         return (v == null) ? false : v;
@@ -289,7 +300,9 @@ module RacePaceCalc {
         return mins.format("%d") + ":" + secs.format("%02d");
     }
 
-    // Formats the magnitude of a pace delta as e.g. "0:07" - no sign,
+    // Formats the magnitude of a pace delta as e.g. "1:07", or just the
+    // seconds ("7") under a minute - fewer digits to read mid-stride, and
+    // the arrow/colour already says which way. No sign,
     // since direction is shown separately (an arrow, colored red/green)
     // rather than a +/- character. A leading sign glyph isn't a proper
     // first-class character in the FONT_NUMBER_* fonts (see
@@ -300,17 +313,24 @@ module RacePaceCalc {
     // everything else.
     function formatPaceDelta(deltaSec as Float) as String {
         var absSec = (deltaSec > 0) ? deltaSec.toNumber() : (-deltaSec).toNumber();
+        if (absSec < 60) {
+            return absSec.format("%d");
+        }
         var mins = absSec / 60;
         var secs = absSec % 60;
         return mins.format("%d") + ":" + secs.format("%02d");
     }
 
     // Formats the magnitude of a finish-time delta as e.g. "12:30" or
-    // "1:05:00" - see formatPaceDelta for why there's no sign. Unlike a
+    // "1:05:00", or just the seconds ("7") under a minute - see
+    // formatPaceDelta for why there's no sign. Unlike a
     // pace delta this can run well past 59 minutes, so it rolls over
     // into H:MM:SS once it reaches an hour.
     function formatFinishDelta(deltaSec as Number) as String {
         var absSec = (deltaSec > 0) ? deltaSec : -deltaSec;
+        if (absSec < 60) {
+            return absSec.format("%d");
+        }
         return formatDuration(absSec);
     }
 

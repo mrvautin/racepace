@@ -120,6 +120,10 @@
             <settingConfig type="boolean" />
         </setting>
 
+        <setting propertyKey="@Properties.showHeartRateArc" title="@Strings.showHeartRateArcTitle">
+            <settingConfig type="boolean" />
+        </setting>
+
         <setting propertyKey="@Properties.highlightDelta" title="@Strings.highlightDeltaTitle">
             <settingConfig type="boolean" />
         </setting>

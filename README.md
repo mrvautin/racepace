@@ -103,6 +103,17 @@ Each row holds up to **three** fields, so you can have **up to 6 values on scree
 
 Hide a field and the remaining fields grow to fill the space, so the layout stays balanced whatever combination you pick.
 
+Ahead/Behind and Finish +/- show just the seconds (e.g. `7`) while you're within a minute, so there's less to read mid-stride. The line between the two rows also turns green when you're on track to beat your goal time and red when you're not.
+
+**Around the edge** (full-screen layout on round watches):
+
+| Setting                 | Default | Description                                                                                                                                                                                           |
+| ----------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Race Progress Ring      | on      | Fills as you cover the race distance — green if you're on track for your goal, red if not — with a dot where goal pace would have you right now.                                                     |
+| Heart Rate Zone Arc     | on      | Your five HR zones in their colours around the bottom of the screen. The zone you're in is drawn thicker, and a bar marks your current heart rate. With this on, the progress ring moves to the top half. |
+
+The Heart Rate Zone Arc isn't available on the vívoactive 4 / 4S, Forerunner 245, fēnix 6 / 6S and Enduro, which give data fields less memory.
+
 **Pace Smoothing:** Current Pace is averaged over a short rolling distance rather than raw instantaneous GPS speed, so it doesn't jump around under trees or between buildings. This is also phone-configured:
 
 | Option | Description                                                     |
@@ -154,7 +165,7 @@ Yes. Choose kilometers or miles in settings; all paces show as min/km or min/mil
 No. Race distance, goal finish time and units can all be set on the watch. Display options (which fields show, pace smoothing, background colour, pace alerts) are set from Garmin Connect Mobile or Garmin Express.
 
 **Can it show my heart rate?**
-Yes. Set **Heart Rate** to Top row or Bottom row in the phone settings (hidden by default). It's shown on a background coloured by your heart rate zone. Set **Average Heart Rate** too for your whole-activity average.
+Yes. Set **Heart Rate** to Top row or Bottom row in the phone settings (hidden by default). It's shown on a background coloured by your heart rate zone. Set **Average Heart Rate** too for your whole-activity average. On most round watches the **Heart Rate Zone Arc** (on by default) also shows your current zone around the bottom of the screen.
 
 **Will it vibrate if I fall behind goal pace?**
 Yes, if you turn on Pace Alerts (off by default) from the watch's RacePace settings menu or your phone. See [Pace Alerts](#3-configure-it) above.

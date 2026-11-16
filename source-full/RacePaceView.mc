@@ -345,22 +345,35 @@ class RacePaceFieldView extends WatchUi.DataField {
         var fullW = dc.getWidth();
         var fullH = dc.getHeight();
 
-        // Progress ring around the edge. Only when this field fills the
-        // whole round screen (the 1-field layout) - in a smaller slot
-        // the "edge" isn't the bezel and a ring would look wrong. When
-        // drawn, everything else is laid out in a slightly smaller
-        // square inside it (_ox/_oy offset, _w/_h size), so no value or
-        // label ever sits under the ring.
+        // Edge rings: race progress and the heart rate zone arc. Only
+        // when this field fills the whole round screen (the 1-field
+        // layout) - in a smaller slot the "edge" isn't the bezel and a
+        // ring would look wrong. With both on, progress takes the top
+        // half and heart rate the bottom; either alone keeps its own
+        // shape. When drawn, everything else is laid out in a slightly
+        // smaller square inside (_ox/_oy offset, _w/_h size), so no value
+        // or label ever sits under a ring.
         var ringPen = 0;
         _isRound = fillsRoundScreen(fullW, fullH);
-        if (RacePaceCalc.getShowProgressRing() && _isRound) {
+        var showProgress = RacePaceCalc.getShowProgressRing() && _isRound;
+        var zones = _hrZones;
+        var showHrArc = RacePaceCalc.getShowHeartRateArc() && _isRound && zones != null && zones.size() >= 6;
+        if (showProgress || showHrArc) {
             ringPen = (fullW * 0.02).toNumber();
             if (ringPen < 4) {
                 ringPen = 4;
             }
-            drawProgressRing(dc, fullW, fullH, ringPen);
+            if (showProgress) {
+                drawProgressRing(dc, fullW, fullH, ringPen, showHrArc);
+            }
+            if (showHrArc) {
+                drawHeartRateArc(dc, fullW, fullH, ringPen);
+            }
         }
-        var inset = ringPen * 1.6;
+        // The layout keeps clear of the rings. The heart rate arc's
+        // current zone is drawn extra thick (see drawHeartRateArc), so it
+        // needs a wider margin.
+        var inset = ringPen * (showHrArc ? 2.6 : 1.6);
         _ox = inset.toFloat();
         _oy = inset.toFloat();
         _w = (fullW - inset * 2).toFloat();
@@ -412,7 +425,14 @@ class RacePaceFieldView extends WatchUi.DataField {
         if (divH < 2) {
             divH = 2;
         }
-        dc.setColor(_labelColor, Graphics.COLOR_TRANSPARENT);
+        // Divider doubles as an at-a-glance on-track signal: green if
+        // you're projected to beat your goal, red if not (grey before
+        // there's a projection).
+        var divColor = _labelColor;
+        if (_finishDeltaSec != 0) {
+            divColor = (_finishDeltaSec > 0) ? _behindColor : _aheadColor;
+        }
+        dc.setColor(divColor, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(_ox + _w * 0.22, cy - divH / 2, _w * 0.56, divH, divH / 2);
 
         drawHalfRow(dc, top, VALUE_FONTS[_twoRowFonts[0]], labelFont, -1);
@@ -683,6 +703,10 @@ class RacePaceFieldView extends WatchUi.DataField {
         if (item == RacePaceCalc.ITEM_DISTANCE && template.length() < 5) {
             // Keep the font steady as distance passes 10 km/mi.
             template = "88.88";
+        } else if ((item == RacePaceCalc.ITEM_DELTA || item == RacePaceCalc.ITEM_FINISH_DELTA) && template.length() < 4) {
+            // Under a minute a delta shows as bare seconds ("7"); size it
+            // as "8:88" so the row's font doesn't jump at 10s and 60s.
+            template = "8:88";
         }
         if (boxed) {
             // Box padding: one extra digit's width. Added whether or not
@@ -860,30 +884,42 @@ class RacePaceFieldView extends WatchUi.DataField {
         return ds.screenShape == System.SCREEN_SHAPE_ROUND && w == ds.screenWidth && h == ds.screenHeight;
     }
 
-    // Race progress ring: a faint full-circle track, an arc from 12
-    // o'clock clockwise for the distance covered (green if you're on
-    // course to beat your goal time, red if not), and a dot where goal
-    // pace would have you right now. The gap between the arc's end and
-    // the dot is how far ahead or behind you are.
-    private function drawProgressRing(dc as Dc, w as Number, h as Number, pen as Number) as Void {
+    // Race progress ring: a faint track, an arc filling clockwise for
+    // the distance covered (green if you're on course to beat your goal
+    // time, red if not), and a dot where goal pace would have you right
+    // now. The gap between the arc's end and the dot is how far ahead or
+    // behind you are.
+    //
+    // Full circle starting at 12 o'clock, or - when `half` (the heart
+    // rate arc has the bottom) - the top half from 9 o'clock to 3.
+    //
+    // drawArc degrees: 0 = 3 o'clock, counter-clockwise positive.
+    private function drawProgressRing(dc as Dc, w as Number, h as Number, pen as Number, half as Boolean) as Void {
         var cx = w / 2;
         var cy = h / 2;
         var r = cx - pen / 2 - 1;
+        // Where the ring starts and how many degrees it covers. The half
+        // ring stops a few degrees short of 9 and 3 o'clock, leaving a
+        // visible gap before the heart rate arc.
+        var startDeg = half ? 177 : 90;
+        var spanDeg = half ? 174 : 360;
 
         dc.setPenWidth(pen);
         dc.setColor(_onWhite ? 0xAAAAAA : 0x555555, Graphics.COLOR_TRANSPARENT);
-        dc.drawCircle(cx, cy, r);
+        if (half) {
+            dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, startDeg, startDeg - spanDeg);
+        } else {
+            dc.drawCircle(cx, cy, r);
+        }
 
         if (_progressFrac > 0.0) {
             dc.setColor((_finishDeltaSec > 0) ? _behindColor : _aheadColor, Graphics.COLOR_TRANSPARENT);
-            if (_progressFrac >= 0.999) {
+            if (_progressFrac >= 0.999 && !half) {
                 dc.drawCircle(cx, cy, r);
             } else {
-                // drawArc degrees: 0 = 3 o'clock, counter-clockwise
-                // positive. Start at 12 o'clock and run clockwise.
-                var endDeg = 90 - (_progressFrac * 360).toNumber();
-                if (endDeg != 90) {
-                    dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, 90, endDeg);
+                var endDeg = startDeg - (_progressFrac * spanDeg).toNumber();
+                if (endDeg != startDeg) {
+                    dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, startDeg, endDeg);
                 }
             }
         }
@@ -891,13 +927,105 @@ class RacePaceFieldView extends WatchUi.DataField {
 
         // Goal-pace marker: a dot ringed in the background colour so it
         // stands out against both the track and the progress arc.
-        var angle = Math.toRadians(90 - _ghostFrac * 360);
-        var mx = cx + r * Math.cos(angle);
-        var my = cy - r * Math.sin(angle);
+        drawRingDot(dc, cx, cy, r, startDeg - _ghostFrac * spanDeg, pen * 0.95, pen * 0.65, _fgColor);
+    }
+
+    // Heart rate zone arc around the bottom half, from 9 o'clock round
+    // to 3: five segments in the zone colours (zone 1 on the left) at
+    // the same thickness as the progress ring, the zone you're in drawn
+    // much thicker, and a bar across the arc at your current heart rate.
+    // Each zone gets an equal share of the arc, and the bar moves
+    // proportionally through its zone.
+    private function drawHeartRateArc(dc as Dc, w as Number, h as Number, pen as Number) as Void {
+        var zones = _hrZones as Array<Number>;
+        var cx = w / 2;
+        var cy = h / 2;
+        var r = cx - pen / 2 - 1;
+        var hr = _heartRate;
+        var hasHr = (hr != null && hr > 0);
+        var zone = hasHr ? RacePaceCalc.heartRateZone(hr, zones) : 0;
+        // The current zone is drawn much thicker than the rest - it
+        // fills the wider margin onUpdate() leaves when the arc is on.
+        var bold = (pen * 2.4).toNumber();
+        var boldR = cx - bold / 2 - 1;
+
+        // 183..357 degrees counter-clockwise: a 3 degree gap at each end
+        // to match the progress ring, and 2 degrees between zones.
+        var seg = 174.0 / 5;
+        for (var z = 1; z <= 5; z += 1) {
+            var start = (183 + (z - 1) * seg + 1).toNumber();
+            var end = (183 + z * seg - 1).toNumber();
+            dc.setColor(RacePaceCalc.heartRateZoneColor(z), Graphics.COLOR_TRANSPARENT);
+            if (z == zone) {
+                dc.setPenWidth(bold);
+                dc.drawArc(cx, cy, boldR, Graphics.ARC_COUNTER_CLOCKWISE, start, end);
+            } else {
+                dc.setPenWidth(pen);
+                dc.drawArc(cx, cy, r, Graphics.ARC_COUNTER_CLOCKWISE, start, end);
+            }
+        }
+        dc.setPenWidth(1);
+
+        if (!hasHr) {
+            return;
+        }
+        // Position along the arc, 0..1: whole zones passed, plus how far
+        // through the current one.
+        var frac = 0.0;
+        if (hr > zones[5]) {
+            frac = 1.0;
+        } else if (hr > zones[0]) {
+            for (var z = 1; z <= 5; z += 1) {
+                if (hr <= zones[z]) {
+                    var lo = zones[z - 1];
+                    var span = zones[z] - lo;
+                    var within = (span > 0) ? (hr - lo).toFloat() / span : 0.0;
+                    frac = ((z - 1) + within) / 5.0;
+                    break;
+                }
+            }
+        }
+
+        // "You are here": a bar across the arc at your heart rate, from
+        // the bezel to just past the thick zone's inner edge, in the
+        // foreground colour (white on black, black on white). Drawn over
+        // a slightly wider bar in the background colour, so it stays
+        // distinct where it crosses the zone colour.
+        var a = Math.toRadians(183 + frac * 174);
+        var cosA = Math.cos(a);
+        var sinA = Math.sin(a);
+        var outer = cx - 1;
+        // Sticks out just past the thick zone (2.4 x pen) but stays
+        // inside the layout margin (2.6 x pen), so it never reaches the
+        // labels.
+        var inner = cx - 1 - pen * 3.0;
+        var x1 = cx + outer * cosA;
+        var y1 = cy - outer * sinA;
+        var x2 = cx + inner * cosA;
+        var y2 = cy - inner * sinA;
+        var barW = pen;
+        if (barW < 3) {
+            barW = 3;
+        }
         dc.setColor(_bgColor, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(mx, my, pen * 0.95);
+        dc.setPenWidth(barW + 4);
+        dc.drawLine(x1, y1, x2, y2);
         dc.setColor(_fgColor, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(mx, my, pen * 0.65);
+        dc.setPenWidth(barW);
+        dc.drawLine(x1, y1, x2, y2);
+        dc.setPenWidth(1);
+    }
+
+    // A dot on a ring at `deg` (drawArc degrees): an outer disc in the
+    // background colour, then an inner one in `color`.
+    private function drawRingDot(dc as Dc, cx as Numeric, cy as Numeric, r as Numeric, deg as Numeric, outer as Numeric, inner as Numeric, color as Number) as Void {
+        var a = Math.toRadians(deg);
+        var mx = cx + r * Math.cos(a);
+        var my = cy - r * Math.sin(a);
+        dc.setColor(_bgColor, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(mx, my, outer);
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(mx, my, inner);
     }
 
     // Draws a centred label, with a small up (ahead) or down (behind)

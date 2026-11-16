@@ -334,7 +334,9 @@ class RacePaceFieldView extends WatchUi.DataField {
             tf = (bf > tf) ? bf : tf;
             bf = tf;
         }
-        dc.setColor(_fgColor, Graphics.COLOR_TRANSPARENT);
+        // Divider doubles as an at-a-glance on-track signal: green if
+        // you're projected to beat your goal, red if not.
+        dc.setColor((_finishDeltaSec == 0) ? _fgColor : ((_finishDeltaSec > 0) ? _behindColor : _aheadColor), Graphics.COLOR_TRANSPARENT);
         dc.drawLine(_w * 0.15, _h / 2, _w * 0.85, _h / 2);
         drawRow(dc, top, VALUE_FONTS[tf], labelFont, -1);
         drawRow(dc, bottom, VALUE_FONTS[bf], labelFont, 1);
@@ -441,6 +443,10 @@ class RacePaceFieldView extends WatchUi.DataField {
         if (item == RacePaceCalc.ITEM_DISTANCE && tpl.length() < 5) {
             // Keep the font steady as distance passes 10 km/mi.
             tpl = "88.88";
+        } else if ((item == RacePaceCalc.ITEM_DELTA || item == RacePaceCalc.ITEM_FINISH_DELTA) && tpl.length() < 4) {
+            // Under a minute a delta shows as bare seconds ("7"); size it
+            // as "8:88" so the row's font doesn't jump at 10s and 60s.
+            tpl = "8:88";
         }
         var w = dc.getTextWidthInPixels(tpl, font).toFloat();
         // Heart rate items (the last two ids) also need room for their
